@@ -16,10 +16,28 @@
 
 package com.jmethods.catatumbo.impl;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
+import com.jmethods.catatumbo.CreatedTimestamp;
+import com.jmethods.catatumbo.DatastoreKey;
+import com.jmethods.catatumbo.Embeddable;
+import com.jmethods.catatumbo.Embedded;
+import com.jmethods.catatumbo.Entity;
+import com.jmethods.catatumbo.EntityManagerException;
+import com.jmethods.catatumbo.Identifier;
+import com.jmethods.catatumbo.Key;
+import com.jmethods.catatumbo.MappedSuperClass;
+import com.jmethods.catatumbo.OverrideKind;
+import com.jmethods.catatumbo.ParentKey;
+import com.jmethods.catatumbo.ProjectedEntity;
+import com.jmethods.catatumbo.Property;
+import com.jmethods.catatumbo.PropertyOverride;
+import com.jmethods.catatumbo.PropertyOverrides;
+import com.jmethods.catatumbo.UpdatedTimestamp;
+import com.jmethods.catatumbo.Version;
+
+import java.lang.reflect.Field;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
@@ -28,22 +46,6 @@ import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-
-import com.jmethods.catatumbo.CreatedTimestamp;
-import com.jmethods.catatumbo.DatastoreKey;
-import com.jmethods.catatumbo.Embedded;
-import com.jmethods.catatumbo.Entity;
-import com.jmethods.catatumbo.EntityManagerException;
-import com.jmethods.catatumbo.Identifier;
-import com.jmethods.catatumbo.Key;
-import com.jmethods.catatumbo.MappedSuperClass;
-import com.jmethods.catatumbo.ParentKey;
-import com.jmethods.catatumbo.ProjectedEntity;
-import com.jmethods.catatumbo.Property;
-import com.jmethods.catatumbo.PropertyOverride;
-import com.jmethods.catatumbo.PropertyOverrides;
-import com.jmethods.catatumbo.UpdatedTimestamp;
-import com.jmethods.catatumbo.Version;
 
 /**
  * Introspector for model classes with the annotation of {@link Entity} or {@link ProjectedEntity}.
@@ -296,6 +298,7 @@ public class EntityIntrospector {
         processParentKeyField(field, fieldType);
       } else if (field.isAnnotationPresent(Embedded.class)) {
         processEmbeddedField(field, fieldType);
+				processOverrideKind(field, fieldType);
       } else {
         processField(field, fieldType);
       }
@@ -490,6 +493,32 @@ public class EntityIntrospector {
     EmbeddedMetadata embeddedMetadata = EmbeddedIntrospector.introspect(embeddedField,
         entityMetadata);
     entityMetadata.putEmbeddedMetadata(embeddedMetadata);
+	}
+
+	/**
+	 * Process an OverrideKind annotation on an embedded field and
+	 * update the current entity metadata if needs be
+	 *
+	 * @param field
+	 *            the embedded field
+   * @param type
+   *          the field type
+	 */
+	private void processOverrideKind(Field field, Class<?> type) {
+		OverrideKind overrideKind = type.getAnnotation(OverrideKind.class);
+		Embeddable embeddable = type.getAnnotation(Embeddable.class);
+
+		if (overrideKind != null) {
+			if (embeddable == null) {
+				String message = String.format("A class annotated with %s must also be annotated with %s",
+						OverrideKind.class.getName(),
+						Embeddable.class.getName()
+				);
+				throw new EntityManagerException(message);
+			}
+
+			entityMetadata.setKind(overrideKind.kind());
+		}
   }
 
   /**
