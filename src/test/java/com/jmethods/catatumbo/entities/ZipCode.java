@@ -90,6 +90,11 @@ public class ZipCode {
 				&& Objects.equals(this.anotherEmbeddable, that.anotherEmbeddable);
 	}
 
+	public boolean nullified() {
+		return Objects.isNull(this.fiveDigits) && Objects.isNull(this.fourDigits)
+				&& (Objects.isNull(this.anotherEmbeddable) || this.anotherEmbeddable.nullified());
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(fiveDigits, fourDigits, anotherEmbeddable);

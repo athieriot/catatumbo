@@ -99,6 +99,7 @@ public class EmbeddedObjectMapper implements Mapper {
 				if (entity.contains(mappedName)) {
 					Value<?> propertyValue = entity.getValue(mappedName);
 					Object fieldValue = propertyMetadata.getMapper().toModel(propertyValue);
+					//TODO: Support immutable entities
 					propertyMetadata.getWriteMethod().invoke(embeddedObject, fieldValue);
 				}
 			}

@@ -343,7 +343,9 @@ public class OptionalFieldsEntity {
 				&& Objects.equals(this.optionalSet, that.optionalSet)
 				&& Objects.equals(this.optionalMap, that.optionalMap)
 				&& Objects.equals(this.optionalPhone, that.optionalPhone) && Objects.equals(this.fax, that.fax)
-				&& Objects.equals(this.optionalAddress, that.optionalAddress);
+				&& (Objects.equals(this.optionalAddress, that.optionalAddress)
+					|| (Objects.isNull(this.optionalAddress) && that.optionalAddress.nullified())
+					|| (this.optionalAddress.nullified() && Objects.isNull(that.optionalAddress)));
 	}
 
 	/*

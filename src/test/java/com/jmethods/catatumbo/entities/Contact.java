@@ -169,7 +169,9 @@ public class Contact {
 		return Objects.equals(this.firstName, that.firstName) && Objects.equals(this.lastName, that.lastName)
 				&& Objects.equals(this.mobileNumber, that.mobileNumber)
 				&& Objects.equals(this.homeAddress, that.homeAddress)
-				&& Objects.equals(this.workAddress, that.workAddress);
+				&& (Objects.equals(this.workAddress, that.workAddress)
+					|| (Objects.isNull(this.workAddress) && that.workAddress.nullified())
+					|| (this.workAddress.nullified() && Objects.isNull(that.workAddress)));
 	}
 
 	@Override

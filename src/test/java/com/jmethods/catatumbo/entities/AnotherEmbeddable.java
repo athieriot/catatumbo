@@ -86,6 +86,10 @@ public class AnotherEmbeddable {
 		return Objects.equals(this.field1, that.field1) && Objects.equals(this.field2, that.field2);
 	}
 
+	public boolean nullified() {
+		return Objects.isNull(field1) && Objects.isNull(field2);
+	}
+
 	@Override
 	public int hashCode() {
 		return Objects.hash(field1, field2);

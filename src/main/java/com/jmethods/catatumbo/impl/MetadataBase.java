@@ -63,6 +63,7 @@ public abstract class MetadataBase {
 		this.clazz = clazz;
 		propertyMetadataMap = new HashMap<>();
 		embeddedMetadataMap = new HashMap<>();
+
 		this.constructor = IntrospectionUtils.getDefaultConstructor(this);
 	}
 

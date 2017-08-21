@@ -16,7 +16,10 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.invoke.MethodHandle;
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 import com.google.cloud.datastore.BaseEntity;
 import com.google.cloud.datastore.Entity;
@@ -28,6 +31,9 @@ import com.google.cloud.datastore.ProjectionEntity;
 import com.google.cloud.datastore.Value;
 import com.jmethods.catatumbo.DefaultDatastoreKey;
 import com.jmethods.catatumbo.EntityManagerException;
+
+import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Converts Entities retrieved from the Cloud Datastore into Entity POJOs.
@@ -131,11 +137,18 @@ public class Unmarshaller {
 	private <T> T unmarshal() {
 
 		try {
-			instantiateEntity();
-			unmarshalIdentifier();
-			unmarshalKeyAndParentKey();
-			unmarshalProperties();
-			unmarshalEmbeddedFields();
+			entity = createEntity(
+					this::instantiateEntity,
+					new ArrayList<FieldDescriptor>() {{
+						add(unmarshalIdentifier());
+						add(unmarshalKey());
+						add(unmarshalParentKey());
+						addAll(unmarshalProperties());
+					}},
+					new ArrayList<EmbeddedFieldDescriptor>() {{
+						addAll(unmarshalEmbeddedFields());
+					}}
+			);
 			return (T) entity;
 		} catch (EntityManagerException exp) {
 			throw exp;
@@ -144,11 +157,36 @@ public class Unmarshaller {
 		}
 	}
 
+	private static Object createEntity(
+			Supplier<Object> init,
+			List<FieldDescriptor> descriptors,
+			List<EmbeddedFieldDescriptor> embeddedDescriptors) throws Throwable {
+
+		//TODO: Support immutable entities
+		Object target = init.get();
+
+		for (FieldDescriptor descriptor : descriptors.stream().filter(Objects::nonNull).collect(toList())) {
+			//TODO: Only override if not Parent key?
+			MethodHandle writeMethod = descriptor.metadata().getWriteMethod();
+			writeMethod.invoke(target, descriptor.value());
+		}
+
+		for (EmbeddedFieldDescriptor embeddedDescriptor : embeddedDescriptors.stream().filter(Objects::nonNull).collect(toList())) {
+			if (embeddedDescriptor.value() != null) {
+				//TODO: Should we override values?
+				MethodHandle writeMethod = embeddedDescriptor.metadata().getWriteMethod();
+				writeMethod.invoke(target, embeddedDescriptor.value());
+			}
+		}
+
+		return target;
+	}
+
 	/**
 	 * Instantiates the entity.
 	 */
-	private void instantiateEntity() {
-		entity = IntrospectionUtils.instantiate(entityMetadata);
+	private Object instantiateEntity() {
+		return IntrospectionUtils.instantiate(entityMetadata);
 	}
 
 	/**
@@ -157,43 +195,52 @@ public class Unmarshaller {
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private void unmarshalIdentifier() throws Throwable {
+	private FieldDescriptor unmarshalIdentifier() throws Throwable {
 		IdentifierMetadata identifierMetadata = entityMetadata.getIdentifierMetadata();
 		Object id = ((Key) nativeEntity.getKey()).getNameOrId();
 		// If the ID is not a simple type...
 		IdClassMetadata idClassMetadata = identifierMetadata.getIdClassMetadata();
 		if (idClassMetadata != null) {
-			Object wrappedId = idClassMetadata.getConstructor().invoke(id);
-			id = wrappedId;
+			id = idClassMetadata.getConstructor().invoke(id);
 		}
-		// Now set the ID (either simple or complex) on the Entity
-		MethodHandle writeMethod = identifierMetadata.getWriteMethod();
-		writeMethod.invoke(entity, id);
+
+		return FieldDescriptor.of(entityMetadata.getIdentifierMetadata(), id);
 	}
 
 	/**
-	 * Unamrshals the entity's key and parent key.
+	 * Unamrshals the entity's key.
 	 * 
 	 * @throws Throwable
 	 *             propagated
-	 * 
 	 */
-	private void unmarshalKeyAndParentKey() throws Throwable {
-		KeyMetadata keyMetadata = entityMetadata.getKeyMetadata();
-		if (keyMetadata != null) {
-			MethodHandle writeMethod = keyMetadata.getWriteMethod();
-			Key entityKey = (Key) nativeEntity.getKey();
-			writeMethod.invoke(entity, new DefaultDatastoreKey(entityKey));
+	private FieldDescriptor unmarshalKey() {
+		if (entityMetadata.getKeyMetadata() != null) {
+			return FieldDescriptor.of(
+					entityMetadata.getKeyMetadata(),
+					new DefaultDatastoreKey((Key) nativeEntity.getKey())
+			);
 		}
 
-		ParentKeyMetadata parentKeyMetadata = entityMetadata.getParentKeyMetadata();
-		if (parentKeyMetadata != null) {
-			MethodHandle writeMethod = parentKeyMetadata.getWriteMethod();
-			Key parentKey = nativeEntity.getKey().getParent();
-			if (parentKey != null) {
-				writeMethod.invoke(entity, new DefaultDatastoreKey(parentKey));
-			}
+		return null;
+	}
+
+	/**
+	 * Unamrshals the parent key.
+	 *
+	 * @throws Throwable
+	 *             propagated
+	 */
+	private FieldDescriptor unmarshalParentKey() {
+		if (entityMetadata.getParentKeyMetadata() != null
+				&& nativeEntity.getKey().getParent() != null) {
+
+			return FieldDescriptor.of(
+					entityMetadata.getParentKeyMetadata(),
+					new DefaultDatastoreKey(nativeEntity.getKey().getParent())
+			);
 		}
+
+		return null;
 	}
 
 	/**
@@ -202,11 +249,10 @@ public class Unmarshaller {
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private void unmarshalProperties() throws Throwable {
-		Collection<PropertyMetadata> propertyMetadataCollection = entityMetadata.getPropertyMetadataCollection();
-		for (PropertyMetadata propertyMetadata : propertyMetadataCollection) {
-			unmarshalProperty(propertyMetadata, entity);
-		}
+	private List<FieldDescriptor> unmarshalProperties() {
+		return entityMetadata.getPropertyMetadataCollection().stream()
+				.map(this::unmarshalProperty)
+				.collect(toList());
 	}
 
 	/**
@@ -215,14 +261,18 @@ public class Unmarshaller {
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private void unmarshalEmbeddedFields() throws Throwable {
+	private List<EmbeddedFieldDescriptor> unmarshalEmbeddedFields() throws Throwable {
+		List<EmbeddedFieldDescriptor> descriptors = new ArrayList<>();
+
 		for (EmbeddedMetadata embeddedMetadata : entityMetadata.getEmbeddedMetadataCollection()) {
 			if (embeddedMetadata.getStorageStrategy() == StorageStrategy.EXPLODED) {
-				unmarshalWithExplodedStrategy(embeddedMetadata, entity);
+				descriptors.addAll(unmarshalWithExplodedStrategy(embeddedMetadata));
 			} else {
-				unmarshalWithImplodedStrategy(embeddedMetadata, entity, nativeEntity);
+				descriptors.addAll(unmarshalWithImplodedStrategy(embeddedMetadata, nativeEntity));
 			}
 		}
+
+		return descriptors;
 	}
 
 	/**
@@ -230,19 +280,27 @@ public class Unmarshaller {
 	 * 
 	 * @param embeddedMetadata
 	 *            the embedded metadata
-	 * @param target
-	 *            the target object that needs to be updated
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private void unmarshalWithExplodedStrategy(EmbeddedMetadata embeddedMetadata, Object target) throws Throwable {
-		Object embeddedObject = IntrospectionUtils.initializeEmbedded(embeddedMetadata, target);
+	private List<EmbeddedFieldDescriptor> unmarshalWithExplodedStrategy(EmbeddedMetadata embeddedMetadata) throws Throwable {
+		List<FieldDescriptor> descriptors = new ArrayList<>();
+		List<EmbeddedFieldDescriptor> embeddedDescriptors = new ArrayList<>();
+
 		for (PropertyMetadata propertyMetadata : embeddedMetadata.getPropertyMetadataCollection()) {
-			unmarshalProperty(propertyMetadata, embeddedObject);
+			descriptors.add(unmarshalProperty(propertyMetadata));
 		}
 		for (EmbeddedMetadata embeddedMetadata2 : embeddedMetadata.getEmbeddedMetadataCollection()) {
-			unmarshalWithExplodedStrategy(embeddedMetadata2, embeddedObject);
+			embeddedDescriptors.addAll(unmarshalWithExplodedStrategy(embeddedMetadata2));
 		}
+
+		Object embeddedObject = createEntity(
+				() -> IntrospectionUtils.initializeEmbedded(embeddedMetadata),
+				descriptors,
+				embeddedDescriptors
+		);
+
+		return singletonList(EmbeddedFieldDescriptor.of(embeddedMetadata, embeddedObject));
 	}
 
 	/**
@@ -250,39 +308,44 @@ public class Unmarshaller {
 	 * 
 	 * @param embeddedMetadata
 	 *            the metadata of the field to unmarshal
-	 * @param target
-	 *            the object in which the embedded field is declared/accessible
-	 *            from
 	 * @param nativeEntity
 	 *            the native entity from which the embedded entity is to be
 	 *            extracted
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private static void unmarshalWithImplodedStrategy(EmbeddedMetadata embeddedMetadata, Object target,
-			BaseEntity<?> nativeEntity) throws Throwable {
-		Object embeddedObject = null;
+	private static List<EmbeddedFieldDescriptor> unmarshalWithImplodedStrategy(EmbeddedMetadata embeddedMetadata,
+																			   BaseEntity<?> nativeEntity) throws Throwable {
+		List<FieldDescriptor> descriptors = new ArrayList<>();
+		List<EmbeddedFieldDescriptor> embeddedDescriptors = new ArrayList<>();
+
 		FullEntity<?> nativeEmbeddedEntity = null;
 		String propertyName = embeddedMetadata.getMappedName();
 		if (nativeEntity.contains(propertyName)) {
 			Value<?> nativeValue = nativeEntity.getValue(propertyName);
 			if (nativeValue instanceof NullValue) {
-				embeddedMetadata.getWriteMethod().invoke(target, embeddedObject);
+				return singletonList(EmbeddedFieldDescriptor.of(embeddedMetadata, null));
 			} else {
 				nativeEmbeddedEntity = ((EntityValue) nativeValue).get();
-				embeddedObject = IntrospectionUtils.initializeEmbedded(embeddedMetadata, target);
 			}
 		}
-		if (embeddedObject == null) {
-			return;
+		if (nativeEmbeddedEntity == null) {
+			return new ArrayList<>();
 		}
 		for (PropertyMetadata propertyMetadata : embeddedMetadata.getPropertyMetadataCollection()) {
-			unmarshalProperty(propertyMetadata, embeddedObject, nativeEmbeddedEntity);
+			descriptors.add(unmarshalProperty(propertyMetadata, nativeEmbeddedEntity));
 		}
 		for (EmbeddedMetadata embeddedMetadata2 : embeddedMetadata.getEmbeddedMetadataCollection()) {
-			unmarshalWithImplodedStrategy(embeddedMetadata2, embeddedObject, nativeEmbeddedEntity);
+			embeddedDescriptors.addAll(unmarshalWithImplodedStrategy(embeddedMetadata2, nativeEmbeddedEntity));
 		}
 
+		Object embeddedObject = createEntity(
+				() -> IntrospectionUtils.initializeEmbedded(embeddedMetadata),
+				descriptors,
+				embeddedDescriptors
+		);
+
+		return singletonList(EmbeddedFieldDescriptor.of(embeddedMetadata, embeddedObject));
 	}
 
 	/**
@@ -291,13 +354,11 @@ public class Unmarshaller {
 	 * 
 	 * @param propertyMetadata
 	 *            the property metadata
-	 * @param target
-	 *            the target object to update
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private void unmarshalProperty(PropertyMetadata propertyMetadata, Object target) throws Throwable {
-		unmarshalProperty(propertyMetadata, target, nativeEntity);
+	private FieldDescriptor unmarshalProperty(PropertyMetadata propertyMetadata) {
+		return unmarshalProperty(propertyMetadata, nativeEntity);
 	}
 
 	/**
@@ -306,15 +367,12 @@ public class Unmarshaller {
 	 * 
 	 * @param propertyMetadata
 	 *            the metadata of the property
-	 * @param target
-	 *            the target object to set the unmarshalled value on
 	 * @param nativeEntity
 	 *            the native entity containing the source property
 	 * @throws Throwable
 	 *             propagated
 	 */
-	private static void unmarshalProperty(PropertyMetadata propertyMetadata, Object target, BaseEntity<?> nativeEntity)
-			throws Throwable {
+	private static FieldDescriptor unmarshalProperty(PropertyMetadata propertyMetadata, BaseEntity<?> nativeEntity) {
 		// The datastore may not have every property that the entity class has
 		// defined. For example, if we are running a projection query or if the
 		// entity class added a new field without updating existing data...So
@@ -323,9 +381,11 @@ public class Unmarshaller {
 		if (nativeEntity.contains(propertyMetadata.getMappedName())) {
 			Value<?> datastoreValue = nativeEntity.getValue(propertyMetadata.getMappedName());
 			Object entityValue = propertyMetadata.getMapper().toModel(datastoreValue);
-			MethodHandle writeMethod = propertyMetadata.getWriteMethod();
-			writeMethod.invoke(target, entityValue);
+
+			return FieldDescriptor.of(propertyMetadata, entityValue);
 		}
+
+		return null;
 	}
 
 }

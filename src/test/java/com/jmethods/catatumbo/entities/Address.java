@@ -153,7 +153,15 @@ public class Address {
 		Address that = (Address) obj;
 		return Objects.equals(this.street1, that.street1) && Objects.equals(this.street2, that.street2)
 				&& Objects.equals(this.city, that.city) && Objects.equals(this.state, that.state)
-				&& Objects.equals(this.zipCode, that.zipCode);
+				&& (Objects.equals(this.zipCode, that.zipCode)
+					|| (Objects.isNull(this.zipCode) && that.zipCode.nullified())
+					|| (this.zipCode.nullified() && Objects.isNull(that.zipCode)));
+	}
+
+	public boolean nullified() {
+		return Objects.isNull(this.street1) && Objects.isNull(this.street2) && Objects.isNull(this.city)
+				&& Objects.isNull(this.state)
+				&& (Objects.isNull(this.zipCode) || this.zipCode.nullified());
 	}
 
 	@Override

@@ -423,9 +423,6 @@ public class IntrospectionUtils {
 	 * 
 	 * @param embeddedMetadata
 	 *            the metadata of the embedded field
-	 * @param target
-	 *            the object in which the embedded field is declared/accessible
-	 *            from
 	 * @return the initialized object
 	 * @throws EntityManagerException
 	 *             if any error occurs during initialization of the embedded
@@ -436,9 +433,28 @@ public class IntrospectionUtils {
 			Object embeddedObject = embeddedMetadata.getReadMethod().invoke(target);
 			if (embeddedObject == null) {
 				embeddedObject = instantiate(embeddedMetadata);
-				embeddedMetadata.getWriteMethod().invoke(target, embeddedObject);
+				//TODO: Does it make sense to mutate the original entity?
+				// embeddedMetadata.getWriteMethod().invoke(target, embeddedObject);
 			}
 			return embeddedObject;
+		} catch (Throwable t) {
+			throw new EntityManagerException(t);
+		}
+	}
+
+	/**
+	 * Initializes the Embedded object represented by the given metadata.
+	 * 
+	 * @param embeddedMetadata
+	 *            the metadata of the embedded field
+	 * @return the initialized object
+	 * @throws EntityManagerException
+	 *             if any error occurs during initialization of the embedded
+	 *             object
+	 */
+	public static Object initializeEmbedded(EmbeddedMetadata embeddedMetadata) {
+		try {
+			return instantiate(embeddedMetadata);
 		} catch (Throwable t) {
 			throw new EntityManagerException(t);
 		}
