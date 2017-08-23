@@ -24,10 +24,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -84,6 +82,12 @@ public class IntrospectionUtils {
 		return null;
 	}
 
+	/**
+	 * Returns all constructors annotated with {@link EntityConstructor} for the given class.
+	 *
+	 * @param clazz the class to introspect
+	 * @return A list of constructors if any
+	 */
 	public static List<Constructor<?>> getImmutableConstructors(Class<?> clazz) {
 		return findAnnotatedConstructorsWith(clazz, EntityConstructor.class);
 	}
@@ -94,6 +98,17 @@ public class IntrospectionUtils {
 				.collect(toList());
 	}
 
+	/**
+	 * Returns the one constructor that contains enough arguments to fit with the provided fieldNames
+	 *
+	 * @param metadata
+	 *            the metadata of the class
+	 * @param fieldNames
+	 * 			  list of expected field names
+	 * @return A valid constructor for the given field names
+	 * @throws InvalidEntityConstructorException
+	 *         	  if no constructors matches or if a {@link Property} annotation is missing
+	 */
 	public static Constructor<?> selectConstructorFor(MetadataBase metadata, Collection<String> fieldNames) {
 		return metadata.getImmutableConstructors().stream()
 				.filter(c -> Objects.equals(c.getParameterCount(), fieldNames.size()))
@@ -105,7 +120,7 @@ public class IntrospectionUtils {
 				});
 	}
 
-	public static List<String> extractParameterNames(Constructor<?> constructor) {
+	private static List<String> extractParameterNames(Constructor<?> constructor) {
 		return stream(constructor.getParameters()).map(parameter -> {
 			Property propertyAnnotation = parameter.getAnnotation(Property.class);
 			if (propertyAnnotation == null) {
@@ -135,6 +150,20 @@ public class IntrospectionUtils {
 		}
 	}
 
+	/**
+	 * Creates and returns a new instance of the Class for the given constructor and arguments.
+	 *
+	 * The constructor parameters nor the arguments needs to be in the same exact order.
+	 *
+	 * @param constructor
+	 *            the constructor to use
+	 * @param args
+	 *            a map of field names -> values to use as arguments
+	 * @return a new instance of the of the Class to which the given constructor
+	 *         belongs.
+	 * @throws EntityManagerException
+	 *             if any error occurs during instantiation.
+	 */
 	public static Object instantiateWith(Constructor<?> constructor, Map<String, Object> args) {
 		try {
 			Object[] arguments = args.entrySet().stream()

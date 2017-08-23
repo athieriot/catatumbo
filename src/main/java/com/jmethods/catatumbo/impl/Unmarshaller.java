@@ -211,7 +211,7 @@ public class Unmarshaller {
 
 		for (EmbeddedFieldDescriptor embeddedDescriptor : embeddedDescriptors) {
 			if (embeddedDescriptor.value() != null) {
-				//TODO: Should we override values?
+				//TODO: Should we override values all the time?
 				MethodHandle writeMethod = embeddedDescriptor.metadata().getWriteMethod();
 				writeMethod.invoke(target, embeddedDescriptor.value());
 			}

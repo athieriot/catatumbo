@@ -46,7 +46,8 @@ Features
 * Support for secondary indexes to index a property for case-insensitive querying/sorting. 
 * Ability to attach custom mappers to a field to map its value to/from the Datastore. 
 * Ability to override default Mappers for a specified Type/Class. 
-* Support for embedded objects through the use of @Embedded and @Embeddable annotations. 
+* Support for embedded objects through the use of @Embedded and @Embeddable annotations.
+* Support for immutable entities through the use of @EntityConstructor.
 * Persisting of inherited fields of an Entity through the use of @MappedSuperClass annotation. 
 * Optimistic Locking support through the use of @Version annotation. 
 * Automatic timestamping (creation and modification) of entities using the @CreatedTimestamp and @UpdatedTimestamp annotations. 

@@ -17,7 +17,7 @@
 package com.jmethods.catatumbo.impl;
 
 /**
- * Contains field metadata and value
+ * Contains embedded field metadata and value
  *
  * @author Aurelien Thieriot
  */
@@ -31,6 +31,12 @@ public class EmbeddedFieldDescriptor {
         this.value = value;
     }
 
+    /**
+     * Create a new instance of <code>EmbeddedFieldDescriptor</code>
+     *
+     * @param metadata The embedded field metadata
+     * @param value The actual value of this field
+     */
     public static EmbeddedFieldDescriptor of(EmbeddedMetadata metadata, Object value) {
         return new EmbeddedFieldDescriptor(metadata, value);
     }

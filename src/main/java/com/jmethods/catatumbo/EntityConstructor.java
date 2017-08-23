@@ -22,7 +22,10 @@ import java.lang.annotation.Target;
 
 /**
  * Specifies an alternative Constructor to use instead of the default empty one.
- * This Constructor should include have one parameter per property in the entity
+ *
+ * This Constructor should have enough parameters to support all non-ignored fields
+ * and each parameter should be annotated with {@link Property} where the name
+ * is the name of the corresponding field.
  *
  * @author Aurelien Thieriot
  */

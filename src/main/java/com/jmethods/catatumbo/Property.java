@@ -26,6 +26,9 @@ import java.lang.annotation.Target;
  * declared in the entity are treated as persistable, unless they are marked
  * with {@link Ignore} annotation.
  *
+ * If used on a Constructor parameter, only the name will be used to
+ * identify the corresponding field name.
+ *
  * @author Sai Pullabhotla
  */
 @Retention(RetentionPolicy.RUNTIME)

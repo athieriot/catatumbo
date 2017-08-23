@@ -31,6 +31,12 @@ public class FieldDescriptor {
         this.value = value;
     }
 
+    /**
+     * Create a new instance of <code>FieldDescriptor</code>
+     *
+     * @param metadata The field metadata
+     * @param value The actual value of this field
+     */
     public static FieldDescriptor of(FieldMetadata metadata, Object value) {
         return new FieldDescriptor(metadata, value);
     }
