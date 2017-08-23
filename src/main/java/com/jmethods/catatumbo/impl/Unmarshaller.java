@@ -32,6 +32,11 @@ import com.google.cloud.datastore.Value;
 import com.jmethods.catatumbo.DefaultDatastoreKey;
 import com.jmethods.catatumbo.EntityManagerException;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.Map;
+import static com.jmethods.catatumbo.impl.IntrospectionUtils.selectConstructorFor;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -137,17 +142,15 @@ public class Unmarshaller {
 	private <T> T unmarshal() {
 
 		try {
-			entity = createEntity(
-					this::instantiateEntity,
+			entity = instantiateEntity(
+					entityMetadata,
 					new ArrayList<FieldDescriptor>() {{
 						add(unmarshalIdentifier());
 						add(unmarshalKey());
 						add(unmarshalParentKey());
 						addAll(unmarshalProperties());
 					}},
-					new ArrayList<EmbeddedFieldDescriptor>() {{
-						addAll(unmarshalEmbeddedFields());
-					}}
+					unmarshalEmbeddedFields()
 			);
 			return (T) entity;
 		} catch (EntityManagerException exp) {
@@ -157,21 +160,56 @@ public class Unmarshaller {
 		}
 	}
 
-	private static Object createEntity(
-			Supplier<Object> init,
+	/**
+	 * Instantiates the entity.
+	 */
+	private static Object instantiateEntity(
+			MetadataBase metadata,
 			List<FieldDescriptor> descriptors,
 			List<EmbeddedFieldDescriptor> embeddedDescriptors) throws Throwable {
+		descriptors.removeIf(Objects::isNull);
+		embeddedDescriptors.removeIf(Objects::isNull);
 
-		//TODO: Support immutable entities
-		Object target = init.get();
+		if (metadata.isImmutable()) {
+			return instantiateImmutableEntity(metadata, descriptors, embeddedDescriptors);
+		} else {
+			return instantiateMutableEntity(metadata, descriptors, embeddedDescriptors);
+		}
+	}
 
-		for (FieldDescriptor descriptor : descriptors.stream().filter(Objects::nonNull).collect(toList())) {
+	private static Object instantiateImmutableEntity(MetadataBase metadata,
+													 List<FieldDescriptor> descriptors,
+													 List<EmbeddedFieldDescriptor> embeddedDescriptors
+	) throws InstantiationException, IllegalAccessException, InvocationTargetException {
+		Map<String, Object> fields = new HashMap<>();
+
+		for (FieldDescriptor descriptor : descriptors) {
+            fields.put(descriptor.metadata().getField().getName(), descriptor.value());
+        }
+
+		for (EmbeddedFieldDescriptor embeddedDescriptor : embeddedDescriptors) {
+            fields.put(embeddedDescriptor.metadata().getField().getField().getName(), embeddedDescriptor.value());
+        }
+
+		Constructor<?> constructor = selectConstructorFor(metadata, fields.keySet());
+		return IntrospectionUtils.instantiateWith(
+				constructor,
+				fields
+		);
+	}
+
+	private static Object instantiateMutableEntity(MetadataBase metadata,
+												   List<FieldDescriptor> descriptors,
+												   List<EmbeddedFieldDescriptor> embeddedDescriptors) throws Throwable {
+		Object target = IntrospectionUtils.instantiate(metadata);
+
+		for (FieldDescriptor descriptor : descriptors) {
 			//TODO: Only override if not Parent key?
 			MethodHandle writeMethod = descriptor.metadata().getWriteMethod();
 			writeMethod.invoke(target, descriptor.value());
 		}
 
-		for (EmbeddedFieldDescriptor embeddedDescriptor : embeddedDescriptors.stream().filter(Objects::nonNull).collect(toList())) {
+		for (EmbeddedFieldDescriptor embeddedDescriptor : embeddedDescriptors) {
 			if (embeddedDescriptor.value() != null) {
 				//TODO: Should we override values?
 				MethodHandle writeMethod = embeddedDescriptor.metadata().getWriteMethod();
@@ -180,13 +218,6 @@ public class Unmarshaller {
 		}
 
 		return target;
-	}
-
-	/**
-	 * Instantiates the entity.
-	 */
-	private Object instantiateEntity() {
-		return IntrospectionUtils.instantiate(entityMetadata);
 	}
 
 	/**
@@ -294,8 +325,8 @@ public class Unmarshaller {
 			embeddedDescriptors.addAll(unmarshalWithExplodedStrategy(embeddedMetadata2));
 		}
 
-		Object embeddedObject = createEntity(
-				() -> IntrospectionUtils.initializeEmbedded(embeddedMetadata),
+		Object embeddedObject = instantiateEntity(
+				embeddedMetadata,
 				descriptors,
 				embeddedDescriptors
 		);
@@ -339,8 +370,8 @@ public class Unmarshaller {
 			embeddedDescriptors.addAll(unmarshalWithImplodedStrategy(embeddedMetadata2, nativeEmbeddedEntity));
 		}
 
-		Object embeddedObject = createEntity(
-				() -> IntrospectionUtils.initializeEmbedded(embeddedMetadata),
+		Object embeddedObject = instantiateEntity(
+				embeddedMetadata,
 				descriptors,
 				embeddedDescriptors
 		);

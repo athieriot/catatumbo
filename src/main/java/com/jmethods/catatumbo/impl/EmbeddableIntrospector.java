@@ -43,7 +43,7 @@ public class EmbeddableIntrospector {
 	private EmbeddableMetadata metadata;
 
 	/**
-	 * Creates a new instance if <code>EmbeddableIntrospector</code>.
+	 * Creates a new instance of <code>EmbeddableIntrospector</code>.
 	 * 
 	 * @param embeddableClass
 	 *            the Embeddable class to introspect
@@ -76,32 +76,32 @@ public class EmbeddableIntrospector {
 			throw new EntityManagerException(message);
 		}
 		metadata = new EmbeddableMetadata(embeddableClass);
-		processFields();
+		processFields(metadata);
 	}
 
 	/**
 	 * Processes each field in this Embeddable and updates the metadata.
 	 */
-	private void processFields() {
+	private void processFields(MetadataBase entityMetadata) {
 		List<Field> fields = IntrospectionUtils.getPersistableFields(embeddableClass);
 		for (Field field : fields) {
 			if (field.isAnnotationPresent(Embedded.class)) {
-				processEmbeddedField(field);
+				processEmbeddedField(field, entityMetadata);
 			} else {
-				processSimpleField(field);
+				processSimpleField(field, entityMetadata);
 			}
 		}
 	}
 
 	/**
 	 * Processes the given simple (or primitive) field and updates the
-	 * meatadata.
+	 * metadata.
 	 * 
 	 * @param field
 	 *            the field to process
 	 */
-	private void processSimpleField(Field field) {
-		PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field);
+	private void processSimpleField(Field field, MetadataBase entityMetadata) {
+		PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field, entityMetadata);
 		if (propertyMetadata != null) {
 			metadata.putPropertyMetadata(propertyMetadata);
 		}
@@ -113,7 +113,7 @@ public class EmbeddableIntrospector {
 	 * @param field
 	 *            the embedded field.
 	 */
-	private void processEmbeddedField(Field field) {
+	private void processEmbeddedField(Field field, MetadataBase entityMetadata) {
 		// We are creating a PropertyMetadata for the embedded field... The new
 		// Mapper, EmbeddedObjectMapper, takes care of mapping embedded fields
 		// to embedded entities.
@@ -124,7 +124,7 @@ public class EmbeddableIntrospector {
 		}
 		boolean indexed = embeddedAnnotation.indexed();
 		boolean optional = embeddedAnnotation.optional();
-		PropertyMetadata propertyMetadata = new PropertyMetadata(field, name, indexed, optional);
+		PropertyMetadata propertyMetadata = new PropertyMetadata(field, name, indexed, optional, entityMetadata.isImmutable());
 		metadata.putPropertyMetadata(propertyMetadata);
 	}
 

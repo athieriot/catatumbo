@@ -16,18 +16,6 @@
 
 package com.jmethods.catatumbo.impl;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.awt.Button;
-import java.util.Map;
-import java.util.Objects;
-
-import org.junit.Test;
-
 import com.jmethods.catatumbo.EntityManagerException;
 import com.jmethods.catatumbo.NoAccessorMethodException;
 import com.jmethods.catatumbo.NoDefaultConstructorException;
@@ -35,6 +23,7 @@ import com.jmethods.catatumbo.NoSuitableMapperException;
 import com.jmethods.catatumbo.entities.Cat;
 import com.jmethods.catatumbo.entities.Contact;
 import com.jmethods.catatumbo.entities.Customer;
+import com.jmethods.catatumbo.entities.ImmutableContact;
 import com.jmethods.catatumbo.entities.NoDefaultConstrctorEntity;
 import com.jmethods.catatumbo.entities.NoGetterMethodEntity;
 import com.jmethods.catatumbo.entities.NoSetterMethodEntity;
@@ -54,6 +43,17 @@ import com.jmethods.catatumbo.entities.TaskName;
 import com.jmethods.catatumbo.entities.WrappedIntegerIdEntity;
 import com.jmethods.catatumbo.entities.WrappedLongIdEntity;
 import com.jmethods.catatumbo.impl.IdentifierMetadata.DataType;
+import org.junit.Test;
+
+import java.awt.*;
+import java.util.Map;
+import java.util.Objects;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Sai Pullabhotla
@@ -262,4 +262,11 @@ public class EntityIntrospectorTest {
 		assertFalse(propertyMetadata.isOptional());
 	}
 
+	@Test
+	public void testIntrospectImmutableEntity() {
+		EntityMetadata entityMetadata = EntityIntrospector.introspect(ImmutableContact.class);
+		assertTrue(entityMetadata.isImmutable());
+		assertEquals(1, entityMetadata.getImmutableConstructors().size());
+		assertNull(entityMetadata.getConstructor());
+	}
 }

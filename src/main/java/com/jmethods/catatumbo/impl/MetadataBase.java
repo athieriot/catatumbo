@@ -16,9 +16,13 @@
 
 package com.jmethods.catatumbo.impl;
 
+import com.jmethods.catatumbo.NoDefaultConstructorException;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Constructor;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.jmethods.catatumbo.EntityManagerException;
@@ -52,6 +56,8 @@ public abstract class MetadataBase {
 	 */
 	private final MethodHandle constructor;
 
+	private final List<Constructor<?>> immutableConstructors;
+
 	/**
 	 * Creates a new instance of <code>MetadataBase</code>.
 	 * 
@@ -64,7 +70,8 @@ public abstract class MetadataBase {
 		propertyMetadataMap = new HashMap<>();
 		embeddedMetadataMap = new HashMap<>();
 
-		this.constructor = IntrospectionUtils.getDefaultConstructor(this);
+		this.immutableConstructors = IntrospectionUtils.getImmutableConstructors(this.clazz);
+		this.constructor = IntrospectionUtils.getDefaultConstructor(this, this.isImmutable());
 	}
 
 	/**
@@ -83,6 +90,14 @@ public abstract class MetadataBase {
 	 */
 	public final MethodHandle getConstructor() {
 		return constructor;
+	}
+
+	public final boolean isImmutable() {
+		return !immutableConstructors.isEmpty();
+	}
+
+	public final List<Constructor<?>> getImmutableConstructors() {
+		return immutableConstructors;
 	}
 
 	/**

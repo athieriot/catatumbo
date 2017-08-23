@@ -16,43 +16,6 @@
 
 package com.jmethods.catatumbo;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.concurrent.TimeUnit;
-
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.jmethods.catatumbo.custommappers.DeviceTypeMapper;
 import com.jmethods.catatumbo.entities.AccessorTestEntity;
 import com.jmethods.catatumbo.entities.ArrayIndex;
@@ -87,6 +50,7 @@ import com.jmethods.catatumbo.entities.GeoLocationField;
 import com.jmethods.catatumbo.entities.GrandchildEntity;
 import com.jmethods.catatumbo.entities.IgnoreField;
 import com.jmethods.catatumbo.entities.IgnoreField2;
+import com.jmethods.catatumbo.entities.ImmutableContact;
 import com.jmethods.catatumbo.entities.IntegerField;
 import com.jmethods.catatumbo.entities.IntegerObject;
 import com.jmethods.catatumbo.entities.Item;
@@ -125,6 +89,42 @@ import com.jmethods.catatumbo.entities.Visitor;
 import com.jmethods.catatumbo.entities.WrappedLongIdEntity;
 import com.jmethods.catatumbo.entities.WrappedLongObjectIdEntity;
 import com.jmethods.catatumbo.entities.ZonedDateTimeField;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Sai Pullabhotla
@@ -2480,6 +2480,15 @@ public class EntityManagerTest {
 		UnindexedStringField loadedEntity = em.load(UnindexedStringField.class, insertedEntity.getId());
 		assertEquals(length, insertedEntity.getHugeString().length());
 		assertEquals(length, loadedEntity.getHugeString().length());
+	}
+
+	@Test
+	public void testInsertImmutable1() {
+		ImmutableContact contact = ImmutableContact.createContact2();
+		ImmutableContact insertedContact = em.insert(contact);
+		ImmutableContact loadedContact = em.load(ImmutableContact.class, insertedContact.getId());
+		assertTrue(contact.equalsExceptId(insertedContact));
+		assertTrue(insertedContact.equals(loadedContact));
 	}
 
 	@Test

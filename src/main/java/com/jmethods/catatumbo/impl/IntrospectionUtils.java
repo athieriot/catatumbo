@@ -16,17 +16,30 @@
 
 package com.jmethods.catatumbo.impl;
 
+import com.jmethods.catatumbo.EntityConstructor;
+import com.jmethods.catatumbo.InvalidEntityConstructorException;
+import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
+import static java.util.Arrays.stream;
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.toList;
 
 import com.jmethods.catatumbo.EntityManagerException;
 import com.jmethods.catatumbo.Ignore;
@@ -58,13 +71,50 @@ public class IntrospectionUtils {
 	 * @throws EntityManagerException
 	 *             if no default constructor exists or any other error occurs.
 	 */
-	public static MethodHandle getDefaultConstructor(MetadataBase metadata) {
+	public static MethodHandle getDefaultConstructor(MetadataBase metadata, boolean ignoreAbsent) {
 		try {
 			return MethodHandles.publicLookup().findConstructor(metadata.getClazz(), MethodType.methodType(void.class));
 		} catch (NoSuchMethodException | IllegalAccessException e) {
-			String pattern = "Class %s requires a public no-arg constructor";
-			throw new NoDefaultConstructorException(String.format(pattern, metadata.getClazz()), e);
+			if (!ignoreAbsent) {
+				String pattern = "Class %s requires a public no-arg constructor";
+				throw new NoDefaultConstructorException(String.format(pattern, metadata.getClazz()), e);
+			}
 		}
+
+		return null;
+	}
+
+	public static List<Constructor<?>> getImmutableConstructors(Class<?> clazz) {
+		return findAnnotatedConstructorsWith(clazz, EntityConstructor.class);
+	}
+
+	private static List<Constructor<?>> findAnnotatedConstructorsWith(Class<?> clazz, Class<? extends Annotation> annotation) {
+		return stream(clazz.getDeclaredConstructors())
+				.filter(constructor -> constructor.isAnnotationPresent(annotation))
+				.collect(toList());
+	}
+
+	public static Constructor<?> selectConstructorFor(MetadataBase metadata, Collection<String> fieldNames) {
+		return metadata.getImmutableConstructors().stream()
+				.filter(c -> Objects.equals(c.getParameterCount(), fieldNames.size()))
+				.filter(c -> extractParameterNames(c).containsAll(fieldNames))
+				.findFirst()
+				.orElseGet(() -> {
+					String pattern = "Class %s requires a public constructor with %d parameters";
+					throw new InvalidEntityConstructorException(String.format(pattern, metadata.getClazz().getSimpleName(), fieldNames.size()));
+				});
+	}
+
+	public static List<String> extractParameterNames(Constructor<?> constructor) {
+		return stream(constructor.getParameters()).map(parameter -> {
+			Property propertyAnnotation = parameter.getAnnotation(Property.class);
+			if (propertyAnnotation == null) {
+				String pattern = "All constructor fields must have a %s annotation";
+				throw new InvalidEntityConstructorException(String.format(pattern, Property.class.getSimpleName()));
+			}
+
+			return propertyAnnotation.name();
+		}).collect(toList());
 	}
 
 	/**
@@ -85,6 +135,23 @@ public class IntrospectionUtils {
 		}
 	}
 
+	public static Object instantiateWith(Constructor<?> constructor, Map<String, Object> args) {
+		try {
+			Object[] arguments = args.entrySet().stream()
+					.sorted(byParameterOrder(constructor))
+					.map(Map.Entry::getValue)
+					.toArray();
+
+			return constructor.newInstance(arguments);
+		} catch (Throwable t) {
+			throw new EntityManagerException(t);
+		}
+	}
+
+	private static Comparator<Map.Entry<String, Object>> byParameterOrder(Constructor<?> constructor) {
+		return comparingInt(entry -> extractParameterNames(constructor).indexOf(entry.getKey()));
+	}
+
 	/**
 	 * Returns the meatdata for the given field.
 	 * 
@@ -92,13 +159,13 @@ public class IntrospectionUtils {
 	 *            the field whose metadata has to be prepared
 	 * @return metadata of the given field.
 	 */
-	public static PropertyMetadata getPropertyMetadata(Field field) {
+	public static PropertyMetadata getPropertyMetadata(Field field, MetadataBase entityMetadata) {
 		Property property = field.getAnnotation(Property.class);
 		// For fields that have @Property annotation, we expect both setter and
 		// getter methods. For all other fields, we only treat them as
 		// persistable if we find valid getter and setter methods.
 		try {
-			PropertyMetadata propertyMetadata = new PropertyMetadata(field);
+			PropertyMetadata propertyMetadata = new PropertyMetadata(field, entityMetadata.isImmutable());
 			return propertyMetadata;
 		} catch (NoAccessorMethodException exp) {
 			if (property != null) {
@@ -168,10 +235,10 @@ public class IntrospectionUtils {
 	 * @throws EntityManagerException
 	 *             if no matching method exists
 	 */
-	public static MethodHandle findWriteMethodHandle(FieldMetadata metadata) {
+	public static MethodHandle findWriteMethodHandle(FieldMetadata metadata, boolean ignoreAbsent) {
 		Field field = metadata.getField();
 		String writeMethodName = getWriteMethodName(field);
-		return findWriteMethodHandle(field.getDeclaringClass(), writeMethodName, field.getType());
+		return findWriteMethodHandle(field.getDeclaringClass(), writeMethodName, field.getType(), ignoreAbsent);
 	}
 
 	/**
@@ -187,15 +254,19 @@ public class IntrospectionUtils {
 	 * @throws EntityManagerException
 	 *             if no matching method exists.
 	 */
-	public static MethodHandle findWriteMethodHandle(Class<?> clazz, String methodName, Class<?> parameterType) {
+	public static MethodHandle findWriteMethodHandle(Class<?> clazz, String methodName, Class<?> parameterType, boolean ignoreAbsent) {
 		try {
 			return MethodHandles.publicLookup().findVirtual(clazz, methodName,
 					MethodType.methodType(void.class, parameterType));
 		} catch (NoSuchMethodException | IllegalAccessException e) {
-			String pattern = "Class %s requires public void %s(%s) method. ";
-			throw new NoAccessorMethodException(
-					String.format(pattern, clazz.getName(), methodName, parameterType.getName()), e);
+			if (!ignoreAbsent) {
+				String pattern = "Class %s requires public void %s(%s) method. ";
+				throw new NoAccessorMethodException(
+						String.format(pattern, clazz.getName(), methodName, parameterType.getName()), e);
+			}
 		}
+
+		return null;
 	}
 
 	/**
@@ -443,24 +514,7 @@ public class IntrospectionUtils {
 	}
 
 	/**
-	 * Initializes the Embedded object represented by the given metadata.
 	 * 
-	 * @param embeddedMetadata
-	 *            the metadata of the embedded field
-	 * @return the initialized object
-	 * @throws EntityManagerException
-	 *             if any error occurs during initialization of the embedded
-	 *             object
-	 */
-	public static Object initializeEmbedded(EmbeddedMetadata embeddedMetadata) {
-		try {
-			return instantiate(embeddedMetadata);
-		} catch (Throwable t) {
-			throw new EntityManagerException(t);
-		}
-	}
-
-	/**
 	 * Examines the given Collection type (List and Set) and returns the Class
 	 * and Parameterized type, if any.
 	 * 

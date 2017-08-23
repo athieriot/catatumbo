@@ -48,10 +48,10 @@ public abstract class FieldMetadata {
 	 *            the field
 	 *
 	 */
-	public FieldMetadata(Field field) {
+	public FieldMetadata(Field field, boolean immutableEntity) {
 		this.field = field;
 		this.readMethod = IntrospectionUtils.findReadMethodHandle(this);
-		this.writeMethod = IntrospectionUtils.findWriteMethodHandle(this);
+		this.writeMethod = IntrospectionUtils.findWriteMethodHandle(this, immutableEntity);
 	}
 
 	/**

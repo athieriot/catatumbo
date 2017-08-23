@@ -16,13 +16,12 @@
 
 package com.jmethods.catatumbo.impl;
 
-import static org.junit.Assert.assertTrue;
-
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.google.cloud.datastore.Entity;
+import com.jmethods.catatumbo.InvalidEntityConstructorException;
 import com.jmethods.catatumbo.TestUtils;
+import com.jmethods.catatumbo.entities.ImmutableContact;
+import com.jmethods.catatumbo.entities.ImmutableWithNoPropertyAnnotation;
+import com.jmethods.catatumbo.entities.ImmutableWithNotEnoughArgs;
 import com.jmethods.catatumbo.entities.LongId;
 import com.jmethods.catatumbo.entities.LongObjectId;
 import com.jmethods.catatumbo.entities.StringId;
@@ -30,6 +29,11 @@ import com.jmethods.catatumbo.entities.WrappedLongIdEntity;
 import com.jmethods.catatumbo.entities.WrappedLongObjectIdEntity;
 import com.jmethods.catatumbo.entities.WrappedStringIdEntity;
 import com.jmethods.catatumbo.impl.Marshaller.Intent;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Sai Pullabhotla
@@ -97,4 +101,45 @@ public class UnmarshallerTest {
 		assertTrue(entity.equals(entity2));
 	}
 
+	@Test
+	public void testUnmarshal_ImmutableEntity() {
+		ImmutableContact immutable = ImmutableContact.createContact1();
+		Entity nativeEntity = (Entity) Marshaller.marshal(em, immutable, Intent.UPDATE);
+		ImmutableContact immutable2 = Unmarshaller.unmarshal(nativeEntity, ImmutableContact.class);
+		assertTrue(immutable.equalsExceptId(immutable2));
+	}
+
+	@Test
+	public void testUnmarshal_ImmutableEntityNested() {
+		ImmutableContact immutable = ImmutableContact.createContact2();
+		Entity nativeEntity = (Entity) Marshaller.marshal(em, immutable, Intent.UPDATE);
+		ImmutableContact immutable2 = Unmarshaller.unmarshal(nativeEntity, ImmutableContact.class);
+		assertTrue(immutable.equalsExceptId(immutable2));
+	}
+
+	@Test(expected = InvalidEntityConstructorException.class)
+	public void testUnmarshal_ImmutableEntityNestedInvalidConstructor() {
+		ImmutableWithNotEnoughArgs invalidImmutable = new ImmutableWithNotEnoughArgs("John");
+		Entity nativeEntity = (Entity) Marshaller.marshal(em, invalidImmutable, Intent.UPDATE);
+
+		try {
+			Unmarshaller.unmarshal(nativeEntity, ImmutableWithNotEnoughArgs.class);
+		} catch (Exception e) {
+			assertEquals("Class ImmutableWithNotEnoughArgs requires a public constructor with 2 parameters", e.getLocalizedMessage());
+			throw e;
+		}
+	}
+
+	@Test(expected = InvalidEntityConstructorException.class)
+	public void testUnmarshal_ImmutableEntityNestedNoPropertyAnnotation() {
+		ImmutableWithNoPropertyAnnotation invalidImmutable = new ImmutableWithNoPropertyAnnotation("John", "Doe");
+		Entity nativeEntity = (Entity) Marshaller.marshal(em, invalidImmutable, Intent.UPDATE);
+
+		try {
+			Unmarshaller.unmarshal(nativeEntity, ImmutableWithNoPropertyAnnotation.class);
+		} catch (Exception e) {
+			assertEquals("All constructor fields must have a Property annotation", e.getLocalizedMessage());
+			throw e;
+		}
+	}
 }

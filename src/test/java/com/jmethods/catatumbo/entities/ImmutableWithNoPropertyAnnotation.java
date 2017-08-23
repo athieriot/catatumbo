@@ -13,25 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jmethods.catatumbo.impl;
 
-import java.lang.reflect.Field;
+package com.jmethods.catatumbo.entities;
+
+import com.jmethods.catatumbo.Entity;
+import com.jmethods.catatumbo.EntityConstructor;
+import com.jmethods.catatumbo.Identifier;
+import com.jmethods.catatumbo.Property;
 
 /**
- * Objects of this class contain the metadata about an entity's full key.
- * 
- * @author Sai Pullabhotla
+ * @author Aurelien Thieriot
+ *
  */
-public class KeyMetadata extends FieldMetadata {
+@Entity
+public class ImmutableWithNoPropertyAnnotation {
 
-	/**
-	 * Creates a new instance of <code>KeyMeatadata</code>.
-	 * 
-	 * @param field
-	 *            the field.
-	 */
-	public KeyMetadata(Field field, boolean immutableEntity) {
-		super(field, immutableEntity);
+	@Identifier
+	private final String name;
+
+	private String surname;
+
+	@EntityConstructor
+	public ImmutableWithNoPropertyAnnotation(String name, String surename) {
+		this.name = name;
+		this.surname = surename;
 	}
 
+	public String getName() {
+		return name;
+	}
+
+	public String getSurname() {
+		return surname;
+	}
 }

@@ -78,8 +78,8 @@ public class PropertyMetadata extends FieldMetadata {
 	 * @param field
 	 *            the field
 	 */
-	public PropertyMetadata(Field field) {
-		super(field);
+	public PropertyMetadata(Field field, boolean immutableEntity) {
+		super(field, immutableEntity);
 		String mappedName = field.getName();
 		boolean indexed = true;
 		boolean optional = false;
@@ -111,8 +111,8 @@ public class PropertyMetadata extends FieldMetadata {
 	 * @param optional
 	 *            whether or not the property is optional
 	 */
-	public PropertyMetadata(Field field, String mappedName, boolean indexed, boolean optional) {
-		super(field);
+	public PropertyMetadata(Field field, String mappedName, boolean indexed, boolean optional, boolean immutableEntity) {
+		super(field, immutableEntity);
 		this.mappedName = mappedName;
 		this.indexed = indexed;
 		setOptional(optional);

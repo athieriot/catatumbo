@@ -17,6 +17,9 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Constructor;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Objects of this class hold the metadata of an embedded field.
@@ -92,8 +95,10 @@ public class EmbeddedMetadata extends MetadataBase {
 	 * @return the write method for the embedded field.
 	 */
 	private MethodHandle findWriteMethod() {
+		List<Constructor<?>> immutableConstructors = IntrospectionUtils.getImmutableConstructors(field.getDeclaringClass());
+
 		return IntrospectionUtils.findWriteMethodHandle(field.getDeclaringClass(),
-				IntrospectionUtils.getWriteMethodName(field.getField()), field.getType());
+				IntrospectionUtils.getWriteMethodName(field.getField()), field.getType(), !immutableConstructors.isEmpty());
 	}
 
 	/**

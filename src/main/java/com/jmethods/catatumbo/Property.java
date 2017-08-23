@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
  * @author Sai Pullabhotla
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
+@Target({ ElementType.FIELD, ElementType.PARAMETER })
 public @interface Property {
 
 	/**

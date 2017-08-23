@@ -30,8 +30,8 @@ public class ParentKeyMetadata extends KeyMetadata {
 	 * @param field
 	 *            the field
 	 */
-	public ParentKeyMetadata(Field field) {
-		super(field);
+	public ParentKeyMetadata(Field field, boolean immutableEntity) {
+		super(field, immutableEntity);
 	}
 
 }

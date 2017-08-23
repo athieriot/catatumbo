@@ -13,25 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.jmethods.catatumbo.impl;
+package com.jmethods.catatumbo;
 
-import java.lang.reflect.Field;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Objects of this class contain the metadata about an entity's full key.
- * 
- * @author Sai Pullabhotla
+ * Specifies an alternative Constructor to use instead of the default empty one.
+ * This Constructor should include have one parameter per property in the entity
+ *
+ * @author Aurelien Thieriot
  */
-public class KeyMetadata extends FieldMetadata {
-
-	/**
-	 * Creates a new instance of <code>KeyMeatadata</code>.
-	 * 
-	 * @param field
-	 *            the field.
-	 */
-	public KeyMetadata(Field field, boolean immutableEntity) {
-		super(field, immutableEntity);
-	}
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.CONSTRUCTOR)
+public @interface EntityConstructor {
+	// Simple marker.
 }
