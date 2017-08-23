@@ -110,4 +110,28 @@ public class ImmutablePhoneNumber {
 		);
 	}
 
+	public static ImmutablePhoneNumber getSample2() {
+		return new ImmutablePhoneNumber(
+				"1",
+				"402",
+				"5556666"
+		);
+	}
+
+	public static ImmutablePhoneNumber getSample3() {
+		return new ImmutablePhoneNumber(
+				"91",
+				"40",
+				"2722 5858"
+		);
+	}
+
+	public static ImmutablePhoneNumber getSample4() {
+		return new ImmutablePhoneNumber(
+				"91",
+				"80",
+				"6666 0000"
+		);
+	}
+
 }

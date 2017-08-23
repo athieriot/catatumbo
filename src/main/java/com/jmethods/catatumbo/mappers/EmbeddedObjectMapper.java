@@ -28,7 +28,12 @@ import com.jmethods.catatumbo.Mapper;
 import com.jmethods.catatumbo.MappingException;
 import com.jmethods.catatumbo.impl.EmbeddableIntrospector;
 import com.jmethods.catatumbo.impl.EmbeddableMetadata;
+import com.jmethods.catatumbo.impl.FieldDescriptor;
 import com.jmethods.catatumbo.impl.PropertyMetadata;
+import com.jmethods.catatumbo.impl.Unmarshaller;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * An implementation of {@link Mapper} interface to map embedded objects.
@@ -93,17 +98,19 @@ public class EmbeddedObjectMapper implements Mapper {
 		}
 		try {
 			FullEntity<?> entity = ((EntityValue) input).get();
-			Object embeddedObject = metadata.getConstructor().invoke();
+			List<FieldDescriptor> descriptors = new ArrayList<>();
+
 			for (PropertyMetadata propertyMetadata : metadata.getPropertyMetadataCollection()) {
 				String mappedName = propertyMetadata.getMappedName();
 				if (entity.contains(mappedName)) {
 					Value<?> propertyValue = entity.getValue(mappedName);
 					Object fieldValue = propertyMetadata.getMapper().toModel(propertyValue);
-					//TODO: Support immutable entities
-					propertyMetadata.getWriteMethod().invoke(embeddedObject, fieldValue);
+
+					descriptors.add(FieldDescriptor.of(propertyMetadata, fieldValue));
 				}
 			}
-			return embeddedObject;
+
+			return Unmarshaller.instantiateEntity(metadata, descriptors, new ArrayList<>());
 		} catch (Throwable exp) {
 			throw new MappingException(exp);
 		}

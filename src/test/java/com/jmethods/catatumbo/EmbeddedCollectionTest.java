@@ -16,18 +16,18 @@
 
 package com.jmethods.catatumbo;
 
-import static org.junit.Assert.assertTrue;
+import com.jmethods.catatumbo.entities.Address;
+import com.jmethods.catatumbo.entities.AddressMap;
+import com.jmethods.catatumbo.entities.ImmutablePhoneList;
+import com.jmethods.catatumbo.entities.PhoneList;
+import com.jmethods.catatumbo.entities.PhoneNumber;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.jmethods.catatumbo.entities.Address;
-import com.jmethods.catatumbo.entities.AddressMap;
-import com.jmethods.catatumbo.entities.PhoneList;
-import com.jmethods.catatumbo.entities.PhoneNumber;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Sai Pullabhotla
@@ -54,6 +54,22 @@ public class EmbeddedCollectionTest {
 		PhoneList entity = new PhoneList();
 		entity = em.insert(entity);
 		PhoneList loadedEntity = em.load(PhoneList.class, entity.getId());
+		assertTrue(entity.equals(loadedEntity));
+	}
+
+	@Test
+	public void testInsert_ImmutablePhoneList() {
+		ImmutablePhoneList entity = ImmutablePhoneList.getSample1();
+		entity = em.insert(entity);
+		ImmutablePhoneList loadedEntity = em.load(ImmutablePhoneList.class, entity.getId());
+		assertTrue(entity.equals(loadedEntity));
+	}
+
+	@Test
+	public void testInsert_ImmutablePhoneList_Null() {
+		ImmutablePhoneList entity = new ImmutablePhoneList();
+		entity = em.insert(entity);
+		ImmutablePhoneList loadedEntity = em.load(ImmutablePhoneList.class, entity.getId());
 		assertTrue(entity.equals(loadedEntity));
 	}
 

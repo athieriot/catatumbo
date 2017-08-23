@@ -163,7 +163,7 @@ public class Unmarshaller {
 	/**
 	 * Instantiates the entity.
 	 */
-	private static Object instantiateEntity(
+	public static Object instantiateEntity(
 			MetadataBase metadata,
 			List<FieldDescriptor> descriptors,
 			List<EmbeddedFieldDescriptor> embeddedDescriptors) throws Throwable {
