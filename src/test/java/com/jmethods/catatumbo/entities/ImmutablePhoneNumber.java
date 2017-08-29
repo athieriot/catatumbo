@@ -17,7 +17,8 @@
 package com.jmethods.catatumbo.entities;
 
 import com.jmethods.catatumbo.Embeddable;
-import com.jmethods.catatumbo.EntityConstructor;
+import com.jmethods.catatumbo.FieldRef;
+import com.jmethods.catatumbo.PersistenceConstructor;
 import com.jmethods.catatumbo.Property;
 
 import java.util.Objects;
@@ -36,11 +37,11 @@ public class ImmutablePhoneNumber {
 
 	private final String subscriberNumber;
 
-	@EntityConstructor
+	@PersistenceConstructor
 	public ImmutablePhoneNumber(
-			@Property(name = "countryCode") String countryCode,
-			@Property(name = "areaCode") String areaCode,
-			@Property(name = "subscriberNumber") String subscriberNumber
+			@FieldRef(name = "countryCode") String countryCode,
+			@FieldRef(name = "areaCode") String areaCode,
+			@FieldRef(name = "subscriberNumber") String subscriberNumber
 	) {
 		this.countryCode = countryCode;
 		this.areaCode = areaCode;

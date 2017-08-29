@@ -19,7 +19,8 @@ package com.jmethods.catatumbo.entities;
 import com.jmethods.catatumbo.DatastoreKey;
 import com.jmethods.catatumbo.Embedded;
 import com.jmethods.catatumbo.Entity;
-import com.jmethods.catatumbo.EntityConstructor;
+import com.jmethods.catatumbo.FieldRef;
+import com.jmethods.catatumbo.PersistenceConstructor;
 import com.jmethods.catatumbo.Exploded;
 import com.jmethods.catatumbo.Identifier;
 import com.jmethods.catatumbo.Imploded;
@@ -61,15 +62,15 @@ public class ImmutableContact {
 	@Exploded
 	private Address workAddress;
 
-	@EntityConstructor
+	@PersistenceConstructor
 	public ImmutableContact(
-			@Property(name = "id") long id,
-			@Property(name = "key") DatastoreKey key,
-			@Property(name = "firstName") String firstName,
-			@Property(name = "lastName") String lastName,
-			@Property(name = "mobileNumber") ImmutablePhoneNumber mobileNumber,
-			@Property(name = "homeAddress") Address homeAddress,
-			@Property(name = "workAddress") Address workAddress
+			@FieldRef(name = "id") long id,
+			@FieldRef(name = "key") DatastoreKey key,
+			@FieldRef(name = "firstName") String firstName,
+			@FieldRef(name = "lastName") String lastName,
+			@FieldRef(name = "mobileNumber") ImmutablePhoneNumber mobileNumber,
+			@FieldRef(name = "homeAddress") Address homeAddress,
+			@FieldRef(name = "workAddress") Address workAddress
 	) {
 		this.id = id;
 		this.key = key;

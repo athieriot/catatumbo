@@ -36,7 +36,6 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Map;
-import static com.jmethods.catatumbo.impl.IntrospectionUtils.selectConstructorFor;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.toList;
 
@@ -191,11 +190,7 @@ public class Unmarshaller {
             fields.put(embeddedDescriptor.metadata().getField().getField().getName(), embeddedDescriptor.value());
         }
 
-		Constructor<?> constructor = selectConstructorFor(metadata, fields.keySet());
-		return IntrospectionUtils.instantiateWith(
-				constructor,
-				fields
-		);
+		return IntrospectionUtils.instantiateWith(metadata, fields);
 	}
 
 	private static Object instantiateMutableEntity(MetadataBase metadata,

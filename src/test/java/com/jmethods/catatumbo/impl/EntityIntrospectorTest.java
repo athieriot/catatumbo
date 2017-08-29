@@ -266,7 +266,7 @@ public class EntityIntrospectorTest {
 	public void testIntrospectImmutableEntity() {
 		EntityMetadata entityMetadata = EntityIntrospector.introspect(ImmutableContact.class);
 		assertTrue(entityMetadata.isImmutable());
-		assertEquals(1, entityMetadata.getImmutableConstructors().size());
+		assertNotNull(entityMetadata.getImmutableConstructor());
 		assertNull(entityMetadata.getConstructor());
 	}
 }

@@ -95,10 +95,10 @@ public class EmbeddedMetadata extends MetadataBase {
 	 * @return the write method for the embedded field.
 	 */
 	private MethodHandle findWriteMethod() {
-		List<Constructor<?>> immutableConstructors = IntrospectionUtils.getImmutableConstructors(field.getDeclaringClass());
+		Constructor<?> immutableConstructors = IntrospectionUtils.getImmutableConstructors(field.getDeclaringClass());
 
 		return IntrospectionUtils.findWriteMethodHandle(field.getDeclaringClass(),
-				IntrospectionUtils.getWriteMethodName(field.getField()), field.getType(), !immutableConstructors.isEmpty());
+				IntrospectionUtils.getWriteMethodName(field.getField()), field.getType(), immutableConstructors != null);
 	}
 
 	/**

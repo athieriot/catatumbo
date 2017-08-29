@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Sai Pullabhotla.
+ * Copyright 2017 Sai Pullabhotla.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,35 +14,29 @@
  * limitations under the License.
  */
 
-package com.jmethods.catatumbo.entities;
-
-import com.jmethods.catatumbo.Entity;
-import com.jmethods.catatumbo.PersistenceConstructor;
-import com.jmethods.catatumbo.Identifier;
+package com.jmethods.catatumbo;
 
 /**
+ * An exception to indicate a model class (Entity, Embeddable, etc.) does not
+ * have the required public no-arg constructor.
+ *
  * @author Aurelien Thieriot
  *
  */
-@Entity
-public class ImmutableWithNoPropertyAnnotation {
+public class InvalidPersistenceConstructorException extends EntityManagerException {
 
-	@Identifier
-	private final String name;
+	/**
+	 * Serial version UID
+	 */
+	private static final long serialVersionUID = 918092791022555923L;
 
-	private String surname;
-
-	@PersistenceConstructor
-	public ImmutableWithNoPropertyAnnotation(String name, String surname) {
-		this.name = name;
-		this.surname = surname;
-	}
-
-	public String getName() {
-		return name;
-	}
-
-	public String getSurname() {
-		return surname;
+	/**
+	 * Creates a new instance of <code>NoDefaultConstructorException</code>.
+	 *
+	 * @param msg
+	 *            the detailed message
+	 */
+	public InvalidPersistenceConstructorException(String msg) {
+		super(msg);
 	}
 }

@@ -56,7 +56,7 @@ public abstract class MetadataBase {
 	 */
 	private final MethodHandle constructor;
 
-	private final List<Constructor<?>> immutableConstructors;
+	private final Constructor<?> immutableConstructors;
 
 	/**
 	 * Creates a new instance of <code>MetadataBase</code>.
@@ -93,10 +93,10 @@ public abstract class MetadataBase {
 	}
 
 	public final boolean isImmutable() {
-		return !immutableConstructors.isEmpty();
+		return immutableConstructors != null;
 	}
 
-	public final List<Constructor<?>> getImmutableConstructors() {
+	public final Constructor<?> getImmutableConstructor() {
 		return immutableConstructors;
 	}
 

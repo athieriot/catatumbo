@@ -22,15 +22,17 @@ import java.lang.annotation.Target;
 
 /**
  * Specifies an alternative Constructor to use instead of the default empty one.
- *
- * This Constructor should have enough parameters to support all non-ignored fields
- * and each parameter should be annotated with {@link Property} where the name
- * is the name of the corresponding field.
+ * This Constructor should have enough parameters to support all non-ignored fields.
+ * 
+ * Each parameter should have the same name as the corresponding field (If compiled with <code>-parameters</code> flag),
+ * Should be annotated with {@link FieldRef} otherwise.
+ * 
+ * Only one annotation per class.
  *
  * @author Aurelien Thieriot
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.CONSTRUCTOR)
-public @interface EntityConstructor {
+public @interface PersistenceConstructor {
 	// Simple marker.
 }

@@ -17,7 +17,7 @@
 package com.jmethods.catatumbo.impl;
 
 import com.google.cloud.datastore.Entity;
-import com.jmethods.catatumbo.InvalidEntityConstructorException;
+import com.jmethods.catatumbo.InvalidPersistenceConstructorException;
 import com.jmethods.catatumbo.TestUtils;
 import com.jmethods.catatumbo.entities.ImmutableContact;
 import com.jmethods.catatumbo.entities.ImmutableWithNoPropertyAnnotation;
@@ -117,7 +117,7 @@ public class UnmarshallerTest {
 		assertTrue(immutable.equalsExceptId(immutable2));
 	}
 
-	@Test(expected = InvalidEntityConstructorException.class)
+	@Test(expected = InvalidPersistenceConstructorException.class)
 	public void testUnmarshal_ImmutableEntityNestedInvalidConstructor() {
 		ImmutableWithNotEnoughArgs invalidImmutable = new ImmutableWithNotEnoughArgs("John");
 		Entity nativeEntity = (Entity) Marshaller.marshal(em, invalidImmutable, Intent.UPDATE);
@@ -125,12 +125,12 @@ public class UnmarshallerTest {
 		try {
 			Unmarshaller.unmarshal(nativeEntity, ImmutableWithNotEnoughArgs.class);
 		} catch (Exception e) {
-			assertEquals("Class ImmutableWithNotEnoughArgs requires a public constructor with 2 parameters", e.getLocalizedMessage());
+			assertEquals("Class ImmutableWithNotEnoughArgs requires a public constructor with 2 parameters named: surname, name", e.getLocalizedMessage());
 			throw e;
 		}
 	}
 
-	@Test(expected = InvalidEntityConstructorException.class)
+	@Test(expected = InvalidPersistenceConstructorException.class)
 	public void testUnmarshal_ImmutableEntityNestedNoPropertyAnnotation() {
 		ImmutableWithNoPropertyAnnotation invalidImmutable = new ImmutableWithNoPropertyAnnotation("John", "Doe");
 		Entity nativeEntity = (Entity) Marshaller.marshal(em, invalidImmutable, Intent.UPDATE);
@@ -138,7 +138,7 @@ public class UnmarshallerTest {
 		try {
 			Unmarshaller.unmarshal(nativeEntity, ImmutableWithNoPropertyAnnotation.class);
 		} catch (Exception e) {
-			assertEquals("All constructor fields must have a Property annotation", e.getLocalizedMessage());
+			assertEquals("Class should be compiled with -parameters flag or all constructor fields must have a FieldRef annotation", e.getLocalizedMessage());
 			throw e;
 		}
 	}

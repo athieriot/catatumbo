@@ -17,6 +17,8 @@
 package com.jmethods.catatumbo.impl;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.logging.Logger;
 
@@ -190,4 +192,11 @@ public class IntrospectionUtilsTest {
 		assertEquals("iPhoneName", output);
 	}
 
+	@Test
+	public void testParameterFlagUsed() {
+		assertFalse(IntrospectionUtils.parameterFlagUsed("arg0"));
+		assertFalse(IntrospectionUtils.parameterFlagUsed("arg0"));
+		assertTrue(IntrospectionUtils.parameterFlagUsed("paramArgument"));
+		assertTrue(IntrospectionUtils.parameterFlagUsed("name"));
+	}
 }

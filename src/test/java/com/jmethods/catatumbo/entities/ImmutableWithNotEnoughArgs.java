@@ -16,19 +16,10 @@
 
 package com.jmethods.catatumbo.entities;
 
-import com.jmethods.catatumbo.DatastoreKey;
-import com.jmethods.catatumbo.Embedded;
 import com.jmethods.catatumbo.Entity;
-import com.jmethods.catatumbo.EntityConstructor;
-import com.jmethods.catatumbo.Exploded;
+import com.jmethods.catatumbo.FieldRef;
 import com.jmethods.catatumbo.Identifier;
-import com.jmethods.catatumbo.Imploded;
-import com.jmethods.catatumbo.Key;
-import com.jmethods.catatumbo.Property;
-import com.jmethods.catatumbo.PropertyOverride;
-import com.jmethods.catatumbo.PropertyOverrides;
-
-import java.util.Objects;
+import com.jmethods.catatumbo.PersistenceConstructor;
 
 /**
  * @author Aurelien Thieriot
@@ -42,8 +33,8 @@ public class ImmutableWithNotEnoughArgs {
 
 	private String surname;
 
-	@EntityConstructor
-	public ImmutableWithNotEnoughArgs(@Property(name = "name") String name) {
+	@PersistenceConstructor
+	public ImmutableWithNotEnoughArgs(@FieldRef(name = "name") String name) {
 		this.name = name;
 		this.surname = "Doe";
 	}

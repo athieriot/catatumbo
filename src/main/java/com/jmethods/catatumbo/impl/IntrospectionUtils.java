@@ -16,8 +16,6 @@
 
 package com.jmethods.catatumbo.impl;
 
-import com.jmethods.catatumbo.EntityConstructor;
-import com.jmethods.catatumbo.InvalidEntityConstructorException;
 import java.lang.annotation.Annotation;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -26,6 +24,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
@@ -35,15 +34,19 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import static java.util.Arrays.stream;
-import static java.util.Comparator.comparingInt;
-import static java.util.stream.Collectors.toList;
-
 import com.jmethods.catatumbo.EntityManagerException;
+import com.jmethods.catatumbo.FieldRef;
 import com.jmethods.catatumbo.Ignore;
+import com.jmethods.catatumbo.InvalidPersistenceConstructorException;
 import com.jmethods.catatumbo.NoAccessorMethodException;
 import com.jmethods.catatumbo.NoDefaultConstructorException;
+import com.jmethods.catatumbo.PersistenceConstructor;
 import com.jmethods.catatumbo.Property;
+
+import static java.util.Arrays.stream;
+import static java.util.Comparator.comparingInt;
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Utility methods for helping with introspection/reflection.
@@ -52,6 +55,8 @@ import com.jmethods.catatumbo.Property;
  *
  */
 public class IntrospectionUtils {
+
+	private static final String CONSTRUCTOR_PARAMETER_ERASURE = "^arg[0-9]+$";
 
 	/**
 	 * Hide the default constructor.
@@ -83,13 +88,22 @@ public class IntrospectionUtils {
 	}
 
 	/**
-	 * Returns all constructors annotated with {@link EntityConstructor} for the given class.
+	 * Returns all constructors annotated with {@link PersistenceConstructor} for the given class.
 	 *
 	 * @param clazz the class to introspect
 	 * @return A list of constructors if any
 	 */
-	public static List<Constructor<?>> getImmutableConstructors(Class<?> clazz) {
-		return findAnnotatedConstructorsWith(clazz, EntityConstructor.class);
+	public static Constructor<?> getImmutableConstructors(Class<?> clazz) {
+		List<Constructor<?>> constructors = findAnnotatedConstructorsWith(clazz, PersistenceConstructor.class);
+		if (constructors.size() > 1) {
+			String pattern = "Class %s can only have one %s annotated constructor";
+			throw new InvalidPersistenceConstructorException(String.format(pattern,
+					clazz.getSimpleName(),
+					PersistenceConstructor.class.getSimpleName())
+			);
+		}
+		
+		return constructors.stream().findFirst().orElse(null);
 	}
 
 	private static List<Constructor<?>> findAnnotatedConstructorsWith(Class<?> clazz, Class<? extends Annotation> annotation) {
@@ -99,37 +113,52 @@ public class IntrospectionUtils {
 	}
 
 	/**
-	 * Returns the one constructor that contains enough arguments to fit with the provided fieldNames
+	 * Check that the immutable constructor contains enough arguments to fit with the provided fieldNames
 	 *
 	 * @param metadata
 	 *            the metadata of the class
 	 * @param fieldNames
 	 * 			  list of expected field names
-	 * @return A valid constructor for the given field names
-	 * @throws InvalidEntityConstructorException
-	 *         	  if no constructors matches or if a {@link Property} annotation is missing
+	 * @throws InvalidPersistenceConstructorException
+	 *         	  if not enough parameters or invalid field names
 	 */
-	public static Constructor<?> selectConstructorFor(MetadataBase metadata, Collection<String> fieldNames) {
-		return metadata.getImmutableConstructors().stream()
-				.filter(c -> Objects.equals(c.getParameterCount(), fieldNames.size()))
-				.filter(c -> extractParameterNames(c).containsAll(fieldNames))
-				.findFirst()
-				.orElseGet(() -> {
-					String pattern = "Class %s requires a public constructor with %d parameters";
-					throw new InvalidEntityConstructorException(String.format(pattern, metadata.getClazz().getSimpleName(), fieldNames.size()));
-				});
+	public static void checkConstructorFor(MetadataBase metadata, Collection<String> fieldNames) {
+		Constructor<?> constructor = metadata.getImmutableConstructor();
+		if (!Objects.equals(constructor.getParameterCount(), fieldNames.size())
+				|| !extractParameterNames(constructor).containsAll(fieldNames)) {
+			
+			String pattern = "Class %s requires a public constructor with %d parameters named: %s";
+			throw new InvalidPersistenceConstructorException(String.format(pattern,
+					metadata.getClazz().getSimpleName(),
+					fieldNames.size(),
+					fieldNames.stream().collect(joining(", "))
+			));
+		}
 	}
 
 	private static List<String> extractParameterNames(Constructor<?> constructor) {
 		return stream(constructor.getParameters()).map(parameter -> {
-			Property propertyAnnotation = parameter.getAnnotation(Property.class);
-			if (propertyAnnotation == null) {
-				String pattern = "All constructor fields must have a %s annotation";
-				throw new InvalidEntityConstructorException(String.format(pattern, Property.class.getSimpleName()));
+			if (parameterFlagUsed(parameter.getName())) {
+				
+				return parameter.getName();
+			} else {
+				return extractFromFieldRef(parameter);
 			}
-
-			return propertyAnnotation.name();
 		}).collect(toList());
+	}
+
+	/* package */ static boolean parameterFlagUsed(String parameter) {
+		return !parameter.matches(CONSTRUCTOR_PARAMETER_ERASURE);
+	}
+
+	private static String extractFromFieldRef(Parameter parameter) {
+		FieldRef fieldRefAnnotation = parameter.getAnnotation(FieldRef.class);
+		if (fieldRefAnnotation == null) {
+            String pattern = "Class should be compiled with -parameters flag or all constructor fields must have a %s annotation";
+            throw new InvalidPersistenceConstructorException(String.format(pattern, FieldRef.class.getSimpleName()));
+        }
+
+		return fieldRefAnnotation.name();
 	}
 
 	/**
@@ -155,8 +184,8 @@ public class IntrospectionUtils {
 	 *
 	 * The constructor parameters nor the arguments needs to be in the same exact order.
 	 *
-	 * @param constructor
-	 *            the constructor to use
+	 * @param metadata
+	 *            the metadata of the class to instantiate
 	 * @param args
 	 *            a map of field names -> values to use as arguments
 	 * @return a new instance of the of the Class to which the given constructor
@@ -164,14 +193,16 @@ public class IntrospectionUtils {
 	 * @throws EntityManagerException
 	 *             if any error occurs during instantiation.
 	 */
-	public static Object instantiateWith(Constructor<?> constructor, Map<String, Object> args) {
+	public static Object instantiateWith(MetadataBase metadata, Map<String, Object> args) {
+		checkConstructorFor(metadata, args.keySet());
+		
 		try {
 			Object[] arguments = args.entrySet().stream()
-					.sorted(byParameterOrder(constructor))
+					.sorted(byParameterOrder(metadata.getImmutableConstructor()))
 					.map(Map.Entry::getValue)
 					.toArray();
 
-			return constructor.newInstance(arguments);
+			return metadata.getImmutableConstructor().newInstance(arguments);
 		} catch (Throwable t) {
 			throw new EntityManagerException(t);
 		}

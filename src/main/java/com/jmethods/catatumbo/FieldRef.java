@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Sai Pullabhotla.
+ * Copyright 2016 Sai Pullabhotla.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.jmethods.catatumbo;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
- * An exception to indicate a model class (Entity, Embeddable, etc.) does not
- * have the required public no-arg constructor.
+ * Specifies the field name for the corresponding constructor parameter on a {@link PersistenceConstructor}.
  *
+ * By default, given that the class is compiled with the <code>-parameter</code>, the parameter name will be used.
+ * 
  * @author Aurelien Thieriot
- *
  */
-public class InvalidEntityConstructorException extends EntityManagerException {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface FieldRef {
 
 	/**
-	 * Serial version UID
-	 */
-	private static final long serialVersionUID = 918092791022555923L;
-
-	/**
-	 * Creates a new instance of <code>NoDefaultConstructorException</code>.
+	 * Specifies the name of the field corresponding to the annotated parameter.
 	 *
-	 * @param msg
-	 *            the detailed message
+	 * @return the field name
 	 */
-	public InvalidEntityConstructorException(String msg) {
-		super(msg);
-	}
+	String name() default "";
 }
