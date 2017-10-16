@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.jmethods.catatumbo;
 
 import java.lang.annotation.ElementType;
@@ -21,8 +22,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * A class annotated with <code>OverrideKind</code> specifies a new kind for the enclosing @{@link Entity}
- * when using within an @{@link Embedded} field.
+ * A class annotated with <code>OverrideKind</code> specifies
+ * a new kind for the enclosing @{@link Entity} when using within an @{@link Embedded} field.
  * Only @{@link Embeddable} classes can be annotated with this annotation.
  *
  * @author Aurelien Thieriot
@@ -31,5 +32,10 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 public @interface OverrideKind {
 
-	String kind();
+  /**
+   * Specifies the entity kind
+   *
+   * @return the entity kind
+   */
+  String kind();
 }
