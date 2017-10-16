@@ -17,6 +17,7 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -52,7 +53,7 @@ import com.jmethods.catatumbo.impl.IdentifierMetadata.DataType;
  * Datastore such as inserting entities, updating, deleting, retrieving, etc. In addition to the
  * standard CRUD operations, the EntityManager allows running GQL queries to retrieve multiple
  * entities that match the specified criteria.
- * 
+ *
  * @author Sai Pullabhotla
  */
 public class DefaultEntityManager implements EntityManager {
@@ -84,7 +85,7 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Creates a new instance of <code>DefaultEntityManager</code>.
-   * 
+   *
    * @param datastore
    *          the Datastore object
    */
@@ -96,7 +97,7 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Returns the underlying Datastore object.
-   * 
+   *
    * @return the underlying Datastore object.
    */
   public Datastore getDatastore() {
@@ -104,8 +105,8 @@ public class DefaultEntityManager implements EntityManager {
   }
 
   @Override
-  public <E> long deleteAll(Class<E> entityClass) {
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+  public <E> long deleteAll(Type entityType) {
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
     return deleteAll(entityMetadata.getKind());
   }
 
@@ -172,62 +173,102 @@ public class DefaultEntityManager implements EntityManager {
 
   @Override
   public <E> E insert(E entity) {
-    return writer.insert(entity);
+    return insert(entity, null);
+  }
+
+  @Override
+  public <E> E insert(E entity, Type entityType) {
+    return writer.insert(entity, entityType);
   }
 
   @Override
   public <E> List<E> insert(List<E> entities) {
-    return writer.insert(entities);
+    return insert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> insert(List<E> entities, Type entityType) {
+    return writer.insert(entities, entityType);
   }
 
   @Override
   public <E> E update(E entity) {
-    return writer.updateWithOptimisticLock(entity);
+    return update(entity, null);
+  }
+
+  @Override
+  public <E> E update(E entity, Type entityType) {
+    return writer.updateWithOptimisticLock(entity, entityType);
   }
 
   @Override
   public <E> List<E> update(List<E> entities) {
-    return writer.updateWithOptimisticLock(entities);
+    return update(entities, null);
+  }
+
+  @Override
+  public <E> List<E> update(List<E> entities, Type entityType) {
+    return writer.updateWithOptimisticLock(entities, entityType);
   }
 
   @Override
   public <E> E upsert(E entity) {
-    return writer.upsert(entity);
+    return upsert(entity, null);
+  }
+
+  @Override
+  public <E> E upsert(E entity, Type entityType) {
+    return writer.upsert(entity, entityType);
   }
 
   @Override
   public <E> List<E> upsert(List<E> entities) {
-    return writer.upsert(entities);
+    return upsert(entities, null);
+  }
+
+  @Override
+  public <E> List<E> upsert(List<E> entities, Type entityType) {
+    return writer.upsert(entities, entityType);
   }
 
   @Override
   public void delete(Object entity) {
-    writer.delete(entity);
+    delete(entity, null);
+  }
+
+  @Override
+  public void delete(Object entity, Type entityType) {
+    writer.delete(entity, entityType);
   }
 
   @Override
   public void delete(List<?> entities) {
-    writer.delete(entities);
+    delete(entities, null);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, long id) {
-    writer.delete(entityClass, id);
+  public void delete(List<?> entities, Type entityType) {
+    writer.delete(entities, entityType);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, String id) {
-    writer.delete(entityClass, id);
+  public void delete(Type entityType, long id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    writer.delete(entityClass, parentKey, id);
+  public void delete(Type entityType, String id) {
+    writer.delete(entityType, id);
   }
 
   @Override
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    writer.delete(entityClass, parentKey, id);
+  public void delete(Type entityType, DatastoreKey parentKey, long id) {
+    writer.delete(entityType, parentKey, id);
+  }
+
+  @Override
+  public void delete(Type entityType, DatastoreKey parentKey, String id) {
+    writer.delete(entityType, parentKey, id);
   }
 
   @Override
@@ -241,43 +282,43 @@ public class DefaultEntityManager implements EntityManager {
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, long id) {
-    return reader.load(entityClass, id);
+  public <E> E load(Type entityType, long id) {
+    return reader.load(entityType, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, String id) {
-    return reader.load(entityClass, id);
+  public <E> E load(Type entityType, String id) {
+    return reader.load(entityType, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, long id) {
-    return reader.load(entityClass, parentKey, id);
+  public <E> E load(Type entityType, DatastoreKey parentKey, long id) {
+    return reader.load(entityType, parentKey, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey parentKey, String id) {
-    return reader.load(entityClass, parentKey, id);
+  public <E> E load(Type entityType, DatastoreKey parentKey, String id) {
+    return reader.load(entityType, parentKey, id);
   }
 
   @Override
-  public <E> E load(Class<E> entityClass, DatastoreKey key) {
-    return reader.load(entityClass, key);
+  public <E> E load(Type entityType, DatastoreKey key) {
+    return reader.load(entityType, key);
   }
 
   @Override
-  public <E> List<E> loadById(Class<E> entityClass, List<Long> identifiers) {
-    return reader.loadById(entityClass, identifiers);
+  public <E> List<E> loadById(Type entityType, List<Long> identifiers) {
+    return reader.loadById(entityType, identifiers);
   }
 
   @Override
-  public <E> List<E> loadByName(Class<E> entityClass, List<String> identifiers) {
-    return reader.loadByName(entityClass, identifiers);
+  public <E> List<E> loadByKey(Type entityType, List<DatastoreKey> keys) {
+    return reader.loadByKey(entityType, keys);
   }
 
   @Override
-  public <E> List<E> loadByKey(Class<E> entityClass, List<DatastoreKey> keys) {
-    return reader.loadByKey(entityClass, keys);
+  public <E> List<E> loadByName(Type entityType, List<String> identifiers) {
+    return reader.loadByName(entityType, identifiers);
   }
 
   @Override
@@ -296,13 +337,13 @@ public class DefaultEntityManager implements EntityManager {
   }
 
   @Override
-  public <E> QueryResponse<E> executeEntityQueryRequest(Class<E> expectedResultType,
-      EntityQueryRequest request) {
+  public <E> QueryResponse<E> executeEntityQueryRequest(Type expectedResultType,
+                                                        EntityQueryRequest request) {
     return reader.executeEntityQueryRequest(expectedResultType, request);
   }
 
   @Override
-  public <E> QueryResponse<E> executeProjectionQueryRequest(Class<E> expectedResultType,
+  public <E> QueryResponse<E> executeProjectionQueryRequest(Type expectedResultType,
       ProjectionQueryRequest request) {
     return reader.executeProjectionQueryRequest(expectedResultType, request);
   }
@@ -324,14 +365,25 @@ public class DefaultEntityManager implements EntityManager {
 
   @Override
   public DatastoreKey allocateId(Object entity) {
-    List<DatastoreKey> keys = allocateId(Arrays.asList(new Object[] { entity }));
+    return allocateId(entity, null);
+  }
+
+  @Override
+  public DatastoreKey allocateId(Object entity, Type entityType) {
+    List<DatastoreKey> keys = allocateId(Arrays.asList(new Object[] { entity }), entityType);
     return keys.get(0);
   }
 
   @Override
   public List<DatastoreKey> allocateId(List<Object> entities) {
+    return allocateId(entities, null);
+  }
+
+  @Override
+  public List<DatastoreKey> allocateId(List<Object> entities, Type entityType) {
     for (Object entity : entities) {
-      IdentifierMetadata identifierMetadata = EntityIntrospector.getIdentifierMetadata(entity);
+      IdentifierMetadata identifierMetadata = EntityIntrospector
+              .getIdentifierMetadata(entity, entityType);
       if (DataType.STRING == identifierMetadata.getDataType()) {
         throw new IllegalArgumentException(
             "ID allocation is only valid for entities with numeric identifiers");
@@ -345,7 +397,7 @@ public class DefaultEntityManager implements EntityManager {
     IncompleteKey[] incompleteKeys = new IncompleteKey[entities.size()];
     int i = 0;
     for (Object entity : entities) {
-      incompleteKeys[i++] = getIncompleteKey(entity);
+      incompleteKeys[i++] = getIncompleteKey(entity, entityType);
     }
     List<Key> nativeKeys = datastore.allocateId(incompleteKeys);
     return DatastoreUtils.toDatastoreKeys(nativeKeys);
@@ -353,13 +405,13 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Returns an IncompleteKey of the given entity.
-   * 
+   *
    * @param entity
    *          the entity
    * @return the incomplete key
    */
-  private IncompleteKey getIncompleteKey(Object entity) {
-    EntityMetadata entityMetadata = EntityIntrospector.introspect(entity.getClass());
+  private IncompleteKey getIncompleteKey(Object entity, Type entityType) {
+    EntityMetadata entityMetadata = EntityIntrospector.introspect(entity, entityType);
     String kind = entityMetadata.getKind();
     ParentKeyMetadata parentKeyMetadata = entityMetadata.getParentKeyMetadata();
     DatastoreKey parentKey = null;
@@ -397,7 +449,7 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Puts/adds the given callback type and its metadata to the list of default listeners.
-   * 
+   *
    * @param callbackType
    *          the event type
    * @param metadata
@@ -414,20 +466,20 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Executes the entity listeners associated with the given entity.
-   * 
+   *
    * @param callbackType
    *          the event type
    * @param entity
    *          the entity that produced the event
    */
-  public void executeEntityListeners(CallbackType callbackType, Object entity) {
+  public void executeEntityListeners(CallbackType callbackType, Object entity, Type entityType) {
     // We may get null entities here. For example loading a nonexistent ID
     // or IDs.
     if (entity == null) {
       return;
     }
     EntityListenersMetadata entityListenersMetadata = EntityIntrospector
-        .getEntityListenersMetadata(entity);
+            .getEntityListenersMetadata(entity, entityType);
     List<CallbackMetadata> callbacks = entityListenersMetadata.getCallbacks(callbackType);
     if (!entityListenersMetadata.isExcludeDefaultListeners()) {
       executeGlobalListeners(callbackType, entity);
@@ -454,21 +506,21 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Executes the entity listeners associated with the given list of entities.
-   * 
+   *
    * @param callbackType
    *          the callback type
    * @param entities
    *          the entities
    */
-  public void executeEntityListeners(CallbackType callbackType, List<?> entities) {
+  public void executeEntityListeners(CallbackType callbackType, List<?> entities, Type entityType) {
     for (Object entity : entities) {
-      executeEntityListeners(callbackType, entity);
+      executeEntityListeners(callbackType, entity, entityType);
     }
   }
 
   /**
    * Executes the global listeners for the given event type for the given entity.
-   * 
+   *
    * @param callbackType
    *          the event type
    * @param entity
@@ -490,7 +542,7 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Invokes the given callback method on the given target object.
-   * 
+   *
    * @param callbackMethod
    *          the callback method
    * @param listener
@@ -511,7 +563,7 @@ public class DefaultEntityManager implements EntityManager {
 
   /**
    * Invokes the given callback method on the given target object.
-   * 
+   *
    * @param callbackMethod
    *          the callback method
    * @param entity
@@ -531,7 +583,7 @@ public class DefaultEntityManager implements EntityManager {
   /**
    * Creates and returns a new native KeyFactory. If a namespace was specified using {@link Tenant},
    * the returned KeyFactory will have the specified namespace.
-   * 
+   *
    * @return a {@link KeyFactory}
    */
   KeyFactory newNativeKeyFactory() {
@@ -546,7 +598,7 @@ public class DefaultEntityManager implements EntityManager {
   /**
    * Returns the effective namespace. If a namespace was specified using {@link Tenant}, it will be
    * returned. Otherwise, the namespace of this EntityManager is returned.
-   * 
+   *
    * @return the effective namespace.
    */
   String getEffectiveNamespace() {

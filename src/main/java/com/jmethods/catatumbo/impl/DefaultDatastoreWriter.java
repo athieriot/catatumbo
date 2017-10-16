@@ -21,6 +21,7 @@ import static com.jmethods.catatumbo.impl.DatastoreUtils.toEntities;
 import static com.jmethods.catatumbo.impl.DatastoreUtils.toNativeEntities;
 import static com.jmethods.catatumbo.impl.DatastoreUtils.toNativeFullEntities;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -39,7 +40,7 @@ import com.jmethods.catatumbo.impl.Marshaller.Intent;
 
 /**
  * Worker class for performing write operations on the Cloud Datastore.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -63,7 +64,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Creates a new instance of <code>DefaultDatastoreWriter</code>.
-   * 
+   *
    * @param entityManager
    *          a reference to the entity manager.
    */
@@ -75,7 +76,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Creates a new instance of <code>DefaultDatastoreWriter</code> for executing batch updates.
-   * 
+   *
    * @param batch
    *          the {@link DefaultDatastoreBatch}.
    */
@@ -87,7 +88,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Creates a new instance of <code>DefaultDatastoreWriter</code> for transactional updates.
-   * 
+   *
    * @param transaction
    *          the {@link DefaultDatastoreTransaction}.
    */
@@ -99,7 +100,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Inserts the given entity into the Cloud Datastore.
-   * 
+   *
    * @param entity
    *          the entity to insert
    * @return the inserted entity. The inserted entity will not be same as the passed in entity. For
@@ -107,15 +108,16 @@ public class DefaultDatastoreWriter {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> E insert(E entity) {
+  public <E> E insert(E entity, Type entityType) {
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_INSERT, entity);
+      entityManager.executeEntityListeners(CallbackType.PRE_INSERT, entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.INSERT);
+              Intent.INSERT, entityType);
+      Type entityClass = entityType != null ? entityType : entity.getClass();
       Entity insertedNativeEntity = nativeWriter.add(nativeEntity);
       @SuppressWarnings("unchecked")
-      E insertedEntity = (E) Unmarshaller.unmarshal(insertedNativeEntity, entity.getClass());
-      entityManager.executeEntityListeners(CallbackType.POST_INSERT, insertedEntity);
+      E insertedEntity = (E) Unmarshaller.unmarshal(insertedNativeEntity, entityClass);
+      entityManager.executeEntityListeners(CallbackType.POST_INSERT, insertedEntity, entityType);
       return insertedEntity;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -124,7 +126,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Inserts the given list of entities into the Cloud Datastore.
-   * 
+   *
    * @param entities
    *          the entities to insert.
    * @return the inserted entities. The inserted entities will not be same as the passed in
@@ -134,17 +136,18 @@ public class DefaultDatastoreWriter {
    *           if any error occurs while inserting.
    */
   @SuppressWarnings("unchecked")
-  public <E> List<E> insert(List<E> entities) {
+  public <E> List<E> insert(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return new ArrayList<>();
     }
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_INSERT, entities);
-      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager, Intent.INSERT);
-      Class<?> entityClass = entities.get(0).getClass();
+      entityManager.executeEntityListeners(CallbackType.PRE_INSERT, entities, entityType);
+      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager,
+              Intent.INSERT, entityType);
+      Type entityClass = entityType != null ? entityType : entities.get(0).getClass();
       List<Entity> insertedNativeEntities = nativeWriter.add(nativeEntities);
       List<E> insertedEntities = (List<E>) toEntities(entityClass, insertedNativeEntities);
-      entityManager.executeEntityListeners(CallbackType.POST_INSERT, insertedEntities);
+      entityManager.executeEntityListeners(CallbackType.POST_INSERT, insertedEntities, entityType);
       return insertedEntities;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -154,7 +157,7 @@ public class DefaultDatastoreWriter {
   /**
    * Updates the given entity in the Cloud Datastore. The passed in Entity must have its ID set for
    * the update to work.
-   * 
+   *
    * @param entity
    *          the entity to update
    * @return the updated entity.
@@ -162,14 +165,15 @@ public class DefaultDatastoreWriter {
    *           if any error occurs while updating.
    */
   @SuppressWarnings("unchecked")
-  public <E> E update(E entity) {
+  public <E> E update(E entity, Type entityType) {
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entity);
+      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entity, entityType);
       Intent intent = (nativeWriter instanceof Batch) ? Intent.BATCH_UPDATE : Intent.UPDATE;
-      Entity nativeEntity = (Entity) Marshaller.marshal(entityManager, entity, intent);
+      Entity nativeEntity = (Entity) Marshaller.marshal(entityManager, entity, intent, entityType);
+      Type entityClass = entityType != null ? entityType : entity.getClass();
       nativeWriter.update(nativeEntity);
-      E updatedEntity = (E) Unmarshaller.unmarshal(nativeEntity, entity.getClass());
-      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntity);
+      E updatedEntity = (E) Unmarshaller.unmarshal(nativeEntity, entityClass);
+      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntity, entityType);
       return updatedEntity;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -179,7 +183,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Updates the given list of entities in the Cloud Datastore.
-   * 
+   *
    * @param entities
    *          the entities to update. The passed in entities must have their ID set for the update
    *          to work.
@@ -188,18 +192,18 @@ public class DefaultDatastoreWriter {
    *           if any error occurs while inserting.
    */
   @SuppressWarnings("unchecked")
-  public <E> List<E> update(List<E> entities) {
+  public <E> List<E> update(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return new ArrayList<>();
     }
     try {
-      Class<E> entityClass = (Class<E>) entities.get(0).getClass();
-      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entities);
+      Type entityClass = entityType != null ? entityType : entities.get(0).getClass();
+      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entities, entityType);
       Intent intent = (nativeWriter instanceof Batch) ? Intent.BATCH_UPDATE : Intent.UPDATE;
-      Entity[] nativeEntities = toNativeEntities(entities, entityManager, intent);
+      Entity[] nativeEntities = toNativeEntities(entities, entityManager, intent, entityType);
       nativeWriter.update(nativeEntities);
       List<E> updatedEntities = toEntities(entityClass, nativeEntities);
-      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntities);
+      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntities, entityType);
       return updatedEntities;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -209,17 +213,17 @@ public class DefaultDatastoreWriter {
   /**
    * Updates the given entity with optimistic locking, if the entity is set up to support optimistic
    * locking. Otherwise, a normal update is performed.
-   * 
+   *
    * @param entity
    *          the entity to update
    * @return the updated entity which may be different than the given entity.
    */
-  public <E> E updateWithOptimisticLock(E entity) {
-    PropertyMetadata versionMetadata = EntityIntrospector.getVersionMetadata(entity);
+  public <E> E updateWithOptimisticLock(E entity, Type entityType) {
+    PropertyMetadata versionMetadata = EntityIntrospector.getVersionMetadata(entity, entityType);
     if (versionMetadata == null) {
-      return update(entity);
+      return update(entity, entityType);
     } else {
-      return updateWithOptimisticLockingInternal(entity, versionMetadata);
+      return updateWithOptimisticLockingInternal(entity, versionMetadata, entityType);
     }
 
   }
@@ -227,27 +231,28 @@ public class DefaultDatastoreWriter {
   /**
    * Updates the given list of entities using optimistic locking feature, if the entities are set up
    * to support optimistic locking. Otherwise, a normal update is performed.
-   * 
+   *
    * @param entities
    *          the entities to update
    * @return the updated entities
    */
-  public <E> List<E> updateWithOptimisticLock(List<E> entities) {
+  public <E> List<E> updateWithOptimisticLock(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return new ArrayList<>();
     }
-    Class<?> entityClass = entities.get(0).getClass();
+    Type entityClass = entityType != null ? entityType : entities.get(0).getClass();
+
     PropertyMetadata versionMetadata = EntityIntrospector.getVersionMetadata(entityClass);
     if (versionMetadata == null) {
-      return update(entities);
+      return update(entities, entityType);
     } else {
-      return updateWithOptimisticLockInternal(entities, versionMetadata);
+      return updateWithOptimisticLockInternal(entities, versionMetadata, entityType);
     }
   }
 
   /**
    * Worker method for updating the given entity with optimistic locking.
-   * 
+   *
    * @param entity
    *          the entity to update
    * @param versionMetadata
@@ -255,11 +260,14 @@ public class DefaultDatastoreWriter {
    * @return the updated entity
    */
   @SuppressWarnings("unchecked")
-  private <E> E updateWithOptimisticLockingInternal(E entity, PropertyMetadata versionMetadata) {
+  private <E> E updateWithOptimisticLockingInternal(E entity,
+                                                    PropertyMetadata versionMetadata,
+                                                    Type entityType) {
     Transaction transaction = null;
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entity);
-      Entity nativeEntity = (Entity) Marshaller.marshal(entityManager, entity, Intent.UPDATE);
+      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entity, entityType);
+      Entity nativeEntity = (Entity) Marshaller.marshal(entityManager, entity,
+              Intent.UPDATE, entityType);
       transaction = datastore.newTransaction();
       Entity storedNativeEntity = transaction.get(nativeEntity.getKey());
       if (storedNativeEntity == null) {
@@ -275,8 +283,9 @@ public class DefaultDatastoreWriter {
       }
       transaction.update(nativeEntity);
       transaction.commit();
-      E updatedEntity = (E) Unmarshaller.unmarshal(nativeEntity, entity.getClass());
-      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntity);
+      Type entityClass = entityType != null ? entityType : entity.getClass();
+      E updatedEntity = (E) Unmarshaller.unmarshal(nativeEntity, entityClass);
+      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntity, entityType);
       return updatedEntity;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -287,8 +296,9 @@ public class DefaultDatastoreWriter {
 
   /**
    * Internal worker method for updating the entities using optimistic locking.
-   * 
+   *
    * @param entities
+      Entity[] nativeEntities = toNativeEntities(entities, entityManager, intent, type);
    *          the entities to update
    * @param versionMetadata
    *          the metadata of the version property
@@ -296,11 +306,13 @@ public class DefaultDatastoreWriter {
    */
   @SuppressWarnings("unchecked")
   private <E> List<E> updateWithOptimisticLockInternal(List<E> entities,
-      PropertyMetadata versionMetadata) {
+                                                       PropertyMetadata versionMetadata,
+                                                       Type entityType) {
     Transaction transaction = null;
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entities);
-      Entity[] nativeEntities = toNativeEntities(entities, entityManager, Intent.UPDATE);
+      entityManager.executeEntityListeners(CallbackType.PRE_UPDATE, entities, entityType);
+      Entity[] nativeEntities = toNativeEntities(entities, entityManager,
+              Intent.UPDATE, entityType);
       // The above native entities already have the version incremented by
       // the marshalling process
       Key[] nativeKeys = new Key[nativeEntities.length];
@@ -326,8 +338,9 @@ public class DefaultDatastoreWriter {
       }
       transaction.update(nativeEntities);
       transaction.commit();
-      List<E> updatedEntities = (List<E>) toEntities(entities.get(0).getClass(), nativeEntities);
-      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntities);
+      Type entityClass = entityType != null ? entityType : entities.get(0).getClass();
+      List<E> updatedEntities = (List<E>) toEntities(entityClass, nativeEntities);
+      entityManager.executeEntityListeners(CallbackType.POST_UPDATE, updatedEntities, entityType);
       return updatedEntities;
 
     } catch (DatastoreException exp) {
@@ -341,22 +354,24 @@ public class DefaultDatastoreWriter {
   /**
    * Updates or inserts the given entity in the Cloud Datastore. If the entity does not have an ID,
    * it may be generated.
-   * 
+   *
    * @param entity
    *          the entity to update or insert
    * @return the updated/inserted entity.
    * @throws EntityManagerException
    *           if any error occurs while saving.
    */
-  public <E> E upsert(E entity) {
+  public <E> E upsert(E entity, Type entityType) {
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_UPSERT, entity);
+      entityManager.executeEntityListeners(CallbackType.PRE_UPSERT, entity, entityType);
       FullEntity<?> nativeEntity = (FullEntity<?>) Marshaller.marshal(entityManager, entity,
-          Intent.UPSERT);
+              Intent.UPSERT, entityType);
       Entity upsertedNativeEntity = nativeWriter.put(nativeEntity);
       @SuppressWarnings("unchecked")
-      E upsertedEntity = (E) Unmarshaller.unmarshal(upsertedNativeEntity, entity.getClass());
-      entityManager.executeEntityListeners(CallbackType.POST_UPSERT, upsertedEntity);
+      Type entityClass = entityType != null ? entityType : entity.getClass();
+
+      E upsertedEntity = (E) Unmarshaller.unmarshal(upsertedNativeEntity, entityClass);
+      entityManager.executeEntityListeners(CallbackType.POST_UPSERT, upsertedEntity, entityType);
       return upsertedEntity;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -366,7 +381,7 @@ public class DefaultDatastoreWriter {
   /**
    * Updates or inserts the given list of entities in the Cloud Datastore. If the entities do not
    * have a valid ID, IDs may be generated.
-   * 
+   *
    * @param entities
    *          the entities to update/or insert.
    * @return the updated or inserted entities
@@ -374,17 +389,18 @@ public class DefaultDatastoreWriter {
    *           if any error occurs while saving.
    */
   @SuppressWarnings("unchecked")
-  public <E> List<E> upsert(List<E> entities) {
+  public <E> List<E> upsert(List<E> entities, Type entityType) {
     if (entities == null || entities.isEmpty()) {
       return new ArrayList<>();
     }
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_UPSERT, entities);
-      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager, Intent.UPSERT);
-      Class<?> entityClass = entities.get(0).getClass();
+      entityManager.executeEntityListeners(CallbackType.PRE_UPSERT, entities, entityType);
+      FullEntity<?>[] nativeEntities = toNativeFullEntities(entities, entityManager,
+              Intent.UPSERT, entityType);
+      Type entityClass = entityType != null ? entityType : entities.get(0).getClass();
       List<Entity> upsertedNativeEntities = nativeWriter.put(nativeEntities);
       List<E> upsertedEntities = (List<E>) toEntities(entityClass, upsertedNativeEntities);
-      entityManager.executeEntityListeners(CallbackType.POST_UPSERT, upsertedEntities);
+      entityManager.executeEntityListeners(CallbackType.POST_UPSERT, upsertedEntities, entityType);
       return upsertedEntities;
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
@@ -393,18 +409,18 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes the given entity from the Cloud Datastore.
-   * 
+   *
    * @param entity
    *          the entity to delete. The entity must have it ID set for the deletion to succeed.
    * @throws EntityManagerException
    *           if any error occurs while deleting.
    */
-  public void delete(Object entity) {
+  public void delete(Object entity, Type entityType) {
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_DELETE, entity);
-      Key nativeKey = Marshaller.marshalKey(entityManager, entity);
+      entityManager.executeEntityListeners(CallbackType.PRE_DELETE, entity, entityType);
+      Key nativeKey = Marshaller.marshalKey(entityManager, entity, entityType);
       nativeWriter.delete(nativeKey);
-      entityManager.executeEntityListeners(CallbackType.POST_DELETE, entity);
+      entityManager.executeEntityListeners(CallbackType.POST_DELETE, entity, entityType);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
     }
@@ -412,21 +428,21 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes the given entities from the Cloud Datastore.
-   * 
+   *
    * @param entities
    *          the entities to delete. The entities must have it ID set for the deletion to succeed.
    * @throws EntityManagerException
    *           if any error occurs while deleting.
    */
-  public void delete(List<?> entities) {
+  public void delete(List<?> entities, Type entityType) {
     try {
-      entityManager.executeEntityListeners(CallbackType.PRE_DELETE, entities);
+      entityManager.executeEntityListeners(CallbackType.PRE_DELETE, entities, entityType);
       Key[] nativeKeys = new Key[entities.size()];
       for (int i = 0; i < entities.size(); i++) {
-        nativeKeys[i] = Marshaller.marshalKey(entityManager, entities.get(i));
+        nativeKeys[i] = Marshaller.marshalKey(entityManager, entities.get(i), entityType);
       }
       nativeWriter.delete(nativeKeys);
-      entityManager.executeEntityListeners(CallbackType.POST_DELETE, entities);
+      entityManager.executeEntityListeners(CallbackType.POST_DELETE, entities, entityType);
     } catch (DatastoreException exp) {
       throw DatastoreUtils.wrap(exp);
     }
@@ -435,17 +451,17 @@ public class DefaultDatastoreWriter {
   /**
    * Deletes the entity with the given ID. The entity is assumed to be a root entity (no parent).
    * The entity kind will be determined from the supplied entity class.
-   * 
-   * @param entityClass
-   *          the entity class.
+   *
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity.
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> void delete(Class<E> entityClass, long id) {
+  public <E> void delete(Type entityType, long id) {
     try {
-      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
       Key nativeKey = entityManager.newNativeKeyFactory().setKind(entityMetadata.getKind())
           .newKey(id);
       nativeWriter.delete(nativeKey);
@@ -457,17 +473,17 @@ public class DefaultDatastoreWriter {
   /**
    * Deletes the entity with the given ID. The entity is assumed to be a root entity (no parent).
    * The entity kind will be determined from the supplied entity class.
-   * 
-   * @param entityClass
-   *          the entity class.
+   *
+   * @param entityType
+   *          the entity type.
    * @param id
    *          the ID of the entity.
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> void delete(Class<E> entityClass, String id) {
+  public <E> void delete(Type entityType, String id) {
     try {
-      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
       Key nativeKey = entityManager.newNativeKeyFactory().setKind(entityMetadata.getKind())
           .newKey(id);
       nativeWriter.delete(nativeKey);
@@ -478,9 +494,9 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes the entity with the given ID and parent key.
-   * 
-   * @param entityClass
-   *          the entity class.
+   *
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
@@ -488,9 +504,9 @@ public class DefaultDatastoreWriter {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, long id) {
+  public <E> void delete(Type entityType, DatastoreKey parentKey, long id) {
     try {
-      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
       Key nativeKey = Key.newBuilder(parentKey.nativeKey(), entityMetadata.getKind(), id).build();
       nativeWriter.delete(nativeKey);
     } catch (DatastoreException exp) {
@@ -500,9 +516,9 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes the entity with the given ID and parent key.
-   * 
-   * @param entityClass
-   *          the entity class.
+   *
+   * @param entityType
+   *          the entity type.
    * @param parentKey
    *          the parent key
    * @param id
@@ -510,9 +526,9 @@ public class DefaultDatastoreWriter {
    * @throws EntityManagerException
    *           if any error occurs while inserting.
    */
-  public <E> void delete(Class<E> entityClass, DatastoreKey parentKey, String id) {
+  public <E> void delete(Type entityType, DatastoreKey parentKey, String id) {
     try {
-      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityClass);
+      EntityMetadata entityMetadata = EntityIntrospector.introspect(entityType);
       Key nativeKey = Key.newBuilder(parentKey.nativeKey(), entityMetadata.getKind(), id).build();
       nativeWriter.delete(nativeKey);
     } catch (DatastoreException exp) {
@@ -522,7 +538,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes an entity given its key.
-   * 
+   *
    * @param key
    *          the entity's key
    * @throws EntityManagerException
@@ -538,7 +554,7 @@ public class DefaultDatastoreWriter {
 
   /**
    * Deletes the entities having the given keys.
-   * 
+   *
    * @param keys
    *          the entities' keys
    * @throws EntityManagerException

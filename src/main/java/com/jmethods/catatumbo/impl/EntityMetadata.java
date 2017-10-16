@@ -17,7 +17,10 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import com.jmethods.catatumbo.CreatedTimestamp;
@@ -34,7 +37,7 @@ import com.jmethods.catatumbo.Version;
 /**
  * Objects of this class hold metadata information about an entity. Metadata includes all the
  * information that is needed to map Java objects to the Cloud Datastore and vice versa.
- * 
+ *
  *
  * @author Sai Pullabhotla
  */
@@ -104,6 +107,11 @@ public class EntityMetadata extends MetadataBase {
   private EntityListenersMetadata entityListenersMetadata;
 
   /**
+   * Mapping of potential type parameters and their concrete type
+   */
+  private Map<TypeVariable<?>, Type> genericTypes;
+
+  /**
    * Creates a new instance of <code>EntityMetadata</code>.
    *
    * @param entityClass
@@ -132,6 +140,7 @@ public class EntityMetadata extends MetadataBase {
     this.projectedEntity = projectedEntity;
     propertyOverrideMap = new HashMap<>();
     masterPropertyMetadataMap = new HashMap<>();
+    genericTypes = new LinkedHashMap<>();
   }
 
   /**
@@ -145,7 +154,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Tells whether or not this metadata belongs to a {@link ProjectedEntity}.
-   * 
+   *
    * @return <code>true</code>, if this metadata belongs to a {@link ProjectedEntity};
    *         <code>false</code>, otherwise.
    */
@@ -202,7 +211,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Sets the metadata of the Key field.
-   * 
+   *
    * @param keyMetadata
    *          the key metadata.
    */
@@ -220,7 +229,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Returns the metadata of the Parent Key.
-   * 
+   *
    * @return the metadata of the Parent Key.May return <code>null</code>.
    */
   public ParentKeyMetadata getParentKeyMetadata() {
@@ -229,7 +238,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Sets the metadata about the parent key.
-   * 
+   *
    * @param parentKeyMetadata
    *          the parent key metadata.
    */
@@ -247,7 +256,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Returns the metadata of the field that is used for optimistic locking.
-   * 
+   *
    * @return the versionMetadata the metadata of the field that is used for optimistic locking.
    */
   public PropertyMetadata getVersionMetadata() {
@@ -256,7 +265,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Sets the metadata of the field that is used for optimistic locking.
-   * 
+   *
    * @param versionMetadata
    *          metadata of the field that is used for optimistic locking.
    */
@@ -270,7 +279,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Returns the metadata of the field that was marked with {@link CreatedTimestamp} annotation.
-   * 
+   *
    * @return the metadata of the field that was marked with {@link CreatedTimestamp} annotation. The
    *         returned value may be <code>null</code>, if the entity does not have a field with
    *         {@link CreatedTimestamp} annotation.
@@ -281,7 +290,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Sets the created timestamp metadata to the given value.
-   * 
+   *
    * @param createdTimestampMetadata
    *          the created timestamp metadata
    */
@@ -295,7 +304,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Returns the metadata of the field that was marked with {@link UpdatedTimestamp} annotation.
-   * 
+   *
    * @return the metadata of the field that was marked with {@link UpdatedTimestamp} annotation. The
    *         returned value may be <code>null</code>, if the entity does not have a field with
    *         {@link UpdatedTimestamp} annotation.
@@ -318,7 +327,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Puts/adds the given property override.
-   * 
+   *
    * @param propertyOverride
    *          the property override
    */
@@ -329,7 +338,7 @@ public class EntityMetadata extends MetadataBase {
   /**
    * Returns the property override, if any for the given name. May return <code>null</code> if there
    * is no override exists for the given name.
-   * 
+   *
    * @param name
    *          the name of the property
    * @return the property override for the given property name. May return <code>null</code>.
@@ -340,12 +349,12 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Updates the master property metadata map with the given property metadata.
-   * 
+   *
    * @param mappedName
    *          the mapped name (or property name in the datastore)
    * @param qualifiedName
    *          the qualified name of the field
-   * 
+   *
    * @throws EntityManagerException
    *           if a property with the same mapped name already exists.
    */
@@ -359,9 +368,17 @@ public class EntityMetadata extends MetadataBase {
 
   }
 
+  public Class<?> reify(TypeVariable<?> typeParameter) {
+    return (Class<?>) genericTypes.get(typeParameter);
+  }
+
+  public void putGenericType(TypeVariable<?> typeParameter, Type concreteType) {
+    genericTypes.put(typeParameter, concreteType);
+  }
+
   /**
    * Returns the metadata of the entity listeners.
-   * 
+   *
    * @return the metadata of the entity listeners.
    */
   public EntityListenersMetadata getEntityListenersMetadata() {
@@ -370,7 +387,7 @@ public class EntityMetadata extends MetadataBase {
 
   /**
    * Sets the metadata of the entity listeners.
-   * 
+   *
    * @param entityListenersMetadata
    *          the metadata of the entity listeners.
    */
@@ -404,7 +421,7 @@ public class EntityMetadata extends MetadataBase {
   /**
    * Validates the embedded field represented by the given metadata to ensure there are no duplicate
    * property names defined across the entity.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the embedded field
    * @param storageStrategy
@@ -432,7 +449,7 @@ public class EntityMetadata extends MetadataBase {
   /**
    * Raises an exception with a detailed message reporting that the entity has more than one field
    * that has a specific annotation.
-   * 
+   *
    * @param entityClass
    *          the entity class
    * @param annotationClass

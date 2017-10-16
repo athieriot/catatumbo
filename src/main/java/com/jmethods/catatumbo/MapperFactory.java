@@ -65,7 +65,7 @@ import com.jmethods.catatumbo.mappers.ZonedDateTimeMapper;
 /**
  * A factory for producing data mappers that are used for mapping fields of model class to/from the
  * Cloud Datastore.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -97,7 +97,7 @@ public class MapperFactory {
 
   /**
    * Returns the singleton instance of this <code>MapperFactory</code>.
-   * 
+   *
    * @return the singleton instance of this <code>MapperFactory</code>.
    */
   public static MapperFactory getInstance() {
@@ -108,17 +108,18 @@ public class MapperFactory {
    * Returns the mapper for the given field. If the field has a custom mapper, a new instance of the
    * specified mapper will be created and returned. Otherwise, one of the built-in mappers will be
    * returned based on the field type.
-   * 
+   *
    * @param field
    *          the field
+   * @param fieldType
+   *          the field type
    * @return the mapper for the given field.
    */
-  public Mapper getMapper(Field field) {
+  public Mapper getMapper(Field field, Class<?> fieldType) {
     PropertyMapper propertyMapperAnnotation = field.getAnnotation(PropertyMapper.class);
     if (propertyMapperAnnotation != null) {
       return createCustomMapper(field, propertyMapperAnnotation);
     }
-    Class<?> fieldType = field.getType();
     if (fieldType.equals(BigDecimal.class)) {
       Decimal decimalAnnotation = field.getAnnotation(Decimal.class);
       if (decimalAnnotation != null) {
@@ -128,13 +129,16 @@ public class MapperFactory {
     if (List.class.isAssignableFrom(fieldType) || Set.class.isAssignableFrom(fieldType)) {
       return CollectionMapperFactory.getInstance().getMapper(field);
     }
-    return getMapper(field.getGenericType());
+    if (Map.class.isAssignableFrom(fieldType)) {
+      return getMapper(field.getGenericType());
+    }
+    return getMapper(fieldType);
   }
 
   /**
    * Returns a mapper for the given type. If a mapper that can handle given type exists in the
    * cache, it will be returned. Otherwise, a new mapper will be created.
-   * 
+   *
    * @param type
    *          the type of field in the model class
    * @return a {@link Mapper} that is capable of mapping the given type.
@@ -151,7 +155,7 @@ public class MapperFactory {
    * Sets or registers the given mapper for the given type. This method must be called before
    * performing any persistence operations, preferably, during application startup. Entities that
    * were introspected before calling this method will NOT use the new mapper.
-   * 
+   *
    * @param type
    *          the type
    * @param mapper
@@ -171,7 +175,7 @@ public class MapperFactory {
 
   /**
    * Creates a new mapper for the given type.
-   * 
+   *
    * @param type
    *          the type for which a mapper is to be created
    * @return a mapper that can handle the mapping of given type to/from the Cloud Datastore.
@@ -200,7 +204,7 @@ public class MapperFactory {
 
   /**
    * Creates a mapper for the given class.
-   * 
+   *
    * @param clazz
    *          the class
    * @return the mapper for the given class.
@@ -222,7 +226,7 @@ public class MapperFactory {
 
   /**
    * Creates a {@link Mapper} for the given class/type.
-   * 
+   *
    * @param type
    *          the type
    * @return a {@link Mapper} for the given class/type.
@@ -287,7 +291,7 @@ public class MapperFactory {
 
   /**
    * Creates and returns a custom mapper for the given field.
-   * 
+   *
    * @param field
    *          the field
    * @param propertyMapperAnnotation

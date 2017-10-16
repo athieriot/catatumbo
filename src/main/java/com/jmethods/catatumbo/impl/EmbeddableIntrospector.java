@@ -25,7 +25,7 @@ import com.jmethods.catatumbo.EntityManagerException;
 
 /**
  * Introspects an {@link Embeddable} class and prepares the metadata for the class.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -43,7 +43,7 @@ public class EmbeddableIntrospector {
 
   /**
    * Creates a new instance if <code>EmbeddableIntrospector</code>.
-   * 
+   *
    * @param embeddableClass
    *          the Embeddable class to introspect
    */
@@ -53,7 +53,7 @@ public class EmbeddableIntrospector {
 
   /**
    * Introspects the given Embeddable class and returns the metadata.
-   * 
+   *
    * @param embeddableClass
    *          the Embeddable class
    * @return the metadata of the given class
@@ -94,12 +94,13 @@ public class EmbeddableIntrospector {
 
   /**
    * Processes the given simple (or primitive) field and updates the metadata.
-   * 
+   *
    * @param field
    *          the field to process
    */
   private void processSimpleField(Field field) {
-    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(field);
+    PropertyMetadata propertyMetadata = IntrospectionUtils
+            .getPropertyMetadata(field, field.getType());
     if (propertyMetadata != null) {
       metadata.putPropertyMetadata(propertyMetadata);
     }
@@ -107,7 +108,7 @@ public class EmbeddableIntrospector {
 
   /**
    * Processes a nested embedded field.
-   * 
+   *
    * @param field
    *          the embedded field.
    */
@@ -122,7 +123,8 @@ public class EmbeddableIntrospector {
     }
     boolean indexed = embeddedAnnotation.indexed();
     boolean optional = embeddedAnnotation.optional();
-    PropertyMetadata propertyMetadata = new PropertyMetadata(field, name, indexed, optional);
+    PropertyMetadata propertyMetadata = new PropertyMetadata(field, field.getType(), name,
+            indexed, optional);
     metadata.putPropertyMetadata(propertyMetadata);
   }
 

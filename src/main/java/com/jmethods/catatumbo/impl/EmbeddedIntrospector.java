@@ -28,7 +28,7 @@ import com.jmethods.catatumbo.Property;
 /**
  * Introspects and prepares the metadata of an embedded field. An embedded field is a complex object
  * that is embedded in an entity or another embedded field.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -56,7 +56,7 @@ public class EmbeddedIntrospector {
 
   /**
    * Creates a new instance of <code>EmbeddedIntrospector</code>.
-   * 
+   *
    * @param field
    *          the embedded field to introspect.
    * @param entityMetadata
@@ -70,7 +70,7 @@ public class EmbeddedIntrospector {
 
   /**
    * Introspects the given embedded field and returns its metadata.
-   * 
+   *
    * @param field
    *          the embedded field to introspect
    * @param entityMetadata
@@ -130,12 +130,13 @@ public class EmbeddedIntrospector {
 
   /**
    * Processes the given simple (or primitive) field and updates the metadata.
-   * 
+   *
    * @param child
    *          the field to process
    */
   private void processSimpleField(Field child) {
-    PropertyMetadata propertyMetadata = IntrospectionUtils.getPropertyMetadata(child);
+    PropertyMetadata propertyMetadata = IntrospectionUtils
+            .getPropertyMetadata(child, child.getType());
     if (propertyMetadata != null) {
       // Process override
       processPropertyOverride(propertyMetadata);
@@ -145,7 +146,7 @@ public class EmbeddedIntrospector {
 
   /**
    * Processes the override, if any, for the given property.
-   * 
+   *
    * @param propertyMetadata
    *          the metadata of the property
    */
@@ -164,7 +165,7 @@ public class EmbeddedIntrospector {
 
   /**
    * Processes a nested embedded field.
-   * 
+   *
    * @param child
    *          the nested embedded field.
    */

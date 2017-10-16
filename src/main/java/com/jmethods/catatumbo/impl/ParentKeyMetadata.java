@@ -20,19 +20,21 @@ import java.lang.reflect.Field;
 
 /**
  * Objects of this class contain the metadata about parent key of an entity.
- * 
+ *
  * @author Sai Pullabhotla
  */
 public class ParentKeyMetadata extends KeyMetadata {
 
   /**
    * Creates a new instance of <code>ParentKeyMetadata</code>.
-   * 
+   *
    * @param field
    *          the field
+   * @param type
+   *          the field type
    */
-  public ParentKeyMetadata(Field field) {
-    super(field);
+  public ParentKeyMetadata(Field field, Class<?> type) {
+    super(field, type);
   }
 
 }

@@ -35,7 +35,7 @@ import com.jmethods.catatumbo.Property;
 
 /**
  * Utility methods for helping with introspection/reflection.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -57,7 +57,7 @@ public class IntrospectionUtils {
   /**
    * Creates and returns a new instance of a persistence class for the given metadata. The returned
    * object will be an instance of the primary persistence class or its Builder.
-   * 
+   *
    * @param metadata
    *          the metadata of the class
    * @return a new instance of the of the Class to which the given metadata belongs.
@@ -74,18 +74,20 @@ public class IntrospectionUtils {
 
   /**
    * Returns the metadata for the given field.
-   * 
+   *
    * @param field
    *          the field whose metadata has to be prepared
+   * @param type
+   *          the field Type
    * @return metadata of the given field.
    */
-  public static PropertyMetadata getPropertyMetadata(Field field) {
+  public static PropertyMetadata getPropertyMetadata(Field field, Class<?> type) {
     Property property = field.getAnnotation(Property.class);
     // For fields that have @Property annotation, we expect both setter and
     // getter methods. For all other fields, we only treat them as
     // persistable if we find valid getter and setter methods.
     try {
-      PropertyMetadata propertyMetadata = new PropertyMetadata(field);
+      PropertyMetadata propertyMetadata = new PropertyMetadata(field, type);
       return propertyMetadata;
     } catch (NoAccessorMethodException | NoMutatorMethodException exp) {
       if (property != null) {
@@ -98,18 +100,20 @@ public class IntrospectionUtils {
   /**
    * Finds and returns a {@link MethodHandle} that can be used to read the field represented by the
    * given metadata.
-   * 
+   *
    * @param field
    *          the field
-   * 
+   * @param type
+   *          the field Type
+   *
    * @return the {@link MethodHandle} for reading the field's value
    * @throws EntityManagerException
    *           if no read method exists
    */
-  public static MethodHandle findReadMethodHandle(Field field) {
+  public static MethodHandle findReadMethodHandle(Field field, Class<?> type) {
     String readMethodName;
     MethodHandle mh = null;
-    if (boolean.class.equals(field.getType())) {
+    if (boolean.class.equals(type)) {
       readMethodName = IntrospectionUtils.getReadMethodNameForBoolean(field);
       mh = findInstanceMethod(field.getDeclaringClass(), readMethodName, field.getType());
     }
@@ -128,15 +132,17 @@ public class IntrospectionUtils {
   /**
    * Finds and returns a {@link MethodHandle} that can be used to update a field represented by the
    * given metadata.
-   * 
+   *
    * @param field
    *          the field
-   * 
+   * @param type
+   *          the field Type
+   *
    * @return the {@link MethodHandle} to update the field
    * @throws NoMutatorMethodException
    *           if no matching method exists
    */
-  public static MethodHandle findWriteMethodHandle(Field field) {
+  public static MethodHandle findWriteMethodHandle(Field field, Class<?> type) {
     ConstructorMetadata constructorMetadata = ConstructorIntrospector
         .introspect(field.getDeclaringClass());
     Class<?> containerClass;
@@ -145,7 +151,7 @@ public class IntrospectionUtils {
       containerClass = constructorMetadata.getBuilderClass();
       for (String prefix : WRITE_METHOD_PREFIXES) {
         mh = findInstanceMethod(containerClass, getWriteMethodName(field, prefix), null,
-            field.getType());
+                field.getType());
         if (mh != null) {
           break;
         }
@@ -166,7 +172,7 @@ public class IntrospectionUtils {
    * Returns all potentially persistable fields that were declared in the specified class. This
    * method filters out the static fields and any fields that have an annotation of {@link Ignore},
    * and returns the rest of the declared fields.
-   * 
+   *
    * @param clazz
    *          the class
    * @return all potentially persistable fields that were declared in the specified class.
@@ -248,7 +254,7 @@ public class IntrospectionUtils {
 
   /**
    * Creates a new object of given class by invoking the class' default public constructor.
-   * 
+   *
    * @param clazz
    *          the class whose instance needs to be created
    * @return a new instance of the given class
@@ -268,7 +274,7 @@ public class IntrospectionUtils {
   /**
    * Examines the given Collection type (List and Set) and returns the Class and Parameterized type,
    * if any.
-   * 
+   *
    * @param type
    *          the Collection type
    * @return an array of Class objects with two elements. The first element will contain the raw
@@ -296,7 +302,7 @@ public class IntrospectionUtils {
 
   /**
    * Examines the given Map type and returns the raw type, type of keys, type of values in the map.
-   * 
+   *
    * @param type
    *          the type of map
    * @return an array containing three elements:
@@ -332,7 +338,7 @@ public class IntrospectionUtils {
   /**
    * Returns a public constructor of the given class with the given parameter types. Returns
    * <code>null</code>, if there is no matching constructor.
-   * 
+   *
    * @param clazz
    *          the class
    * @param parameterTypes
@@ -354,7 +360,7 @@ public class IntrospectionUtils {
 
   /**
    * Checks to see if the given field is a static field.
-   * 
+   *
    * @param field
    *          the field to test
    * @return <code>true</code>, if the given field is static; <code>false</code>, otherwise.
@@ -366,7 +372,7 @@ public class IntrospectionUtils {
 
   /**
    * Returns the value of the field represented by the given metadata.
-   * 
+   *
    * @param fieldMetadata
    *          the metadata of the field
    * @param target
@@ -384,7 +390,7 @@ public class IntrospectionUtils {
 
   /**
    * Finds and returns a MethodHandle for the default constructor of the given class, {@code clazz}.
-   * 
+   *
    * @param clazz
    *          the class
    * @return a MethodHandle for the default constructor. Returns {@code null} if the class does not
@@ -403,7 +409,7 @@ public class IntrospectionUtils {
 
   /**
    * Finds and returns a MethodHandle for a public static method.
-   * 
+   *
    * @param clazz
    *          the class to search
    * @param methodName
@@ -422,7 +428,7 @@ public class IntrospectionUtils {
 
   /**
    * Finds and returns a MethodHandle for a public instance method.
-   * 
+   *
    * @param clazz
    *          the class to search
    * @param methodName
@@ -441,7 +447,7 @@ public class IntrospectionUtils {
 
   /**
    * Finds and returns a method handle for the given criteria.
-   * 
+   *
    * @param clazz
    *          the class to search
    * @param methodName

@@ -20,19 +20,21 @@ import java.lang.reflect.Field;
 
 /**
  * Objects of this class contain the metadata about an entity's full key.
- * 
+ *
  * @author Sai Pullabhotla
  */
 public class KeyMetadata extends FieldMetadata {
 
   /**
    * Creates a new instance of <code>KeyMetadata</code>.
-   * 
+   *
    * @param field
    *          the field.
+   * @param type
+   *          the field Type.
    */
-  public KeyMetadata(Field field) {
-    super(field);
+  public KeyMetadata(Field field, Class<?> type) {
+    super(field, type);
   }
 
 }

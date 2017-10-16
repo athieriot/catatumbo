@@ -20,7 +20,7 @@ import java.lang.invoke.MethodHandle;
 
 /**
  * Objects of this class hold the metadata of an embedded field.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -63,7 +63,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Creates a new instance of <code>EmbeddedMetadata</code>.
-   * 
+   *
    * @param field
    *          the embedded field to which this metadata belongs
    */
@@ -72,13 +72,13 @@ public class EmbeddedMetadata extends MetadataBase {
     this.field = field;
     // Default storage strategy is EXPLODED
     this.storageStrategy = StorageStrategy.EXPLODED;
-    this.readMethod = IntrospectionUtils.findReadMethodHandle(field.getField());
-    this.writeMethod = IntrospectionUtils.findWriteMethodHandle(field.getField());
+    this.readMethod = IntrospectionUtils.findReadMethodHandle(field.getField(), field.getType());
+    this.writeMethod = IntrospectionUtils.findWriteMethodHandle(field.getField(), field.getType());
   }
 
   /**
    * Returns the embedded field to which this metadata belongs.
-   * 
+   *
    * @return the embedded field to which this metadata belongs.
    */
   public EmbeddedField getField() {
@@ -87,7 +87,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Returns the read method of the embedded field to which this metadata belongs.
-   * 
+   *
    * @return the read method of the embedded field to which this metadata belongs.
    */
   public MethodHandle getReadMethod() {
@@ -96,7 +96,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Returns the storage strategy.
-   * 
+   *
    * @return the storage strategy.
    */
   public StorageStrategy getStorageStrategy() {
@@ -105,7 +105,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Sets the storage strategy to the given value.
-   * 
+   *
    * @param storageStrategy
    *          the storage strategy
    */
@@ -115,7 +115,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Returns the write method of the embedded field to which this metadata belongs.
-   * 
+   *
    * @return the write method of the embedded field to which this metadata belongs.
    */
   public MethodHandle getWriteMethod() {
@@ -125,7 +125,7 @@ public class EmbeddedMetadata extends MetadataBase {
   /**
    * Returns the property name to which this embedded field is mapped. Only used when the storage
    * strategy is {@link StorageStrategy#IMPLODED}.
-   * 
+   *
    * @return the property name to which this embedded field is mapped.
    */
   public String getMappedName() {
@@ -134,7 +134,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Sets the property name to which this embedded field is mapped.
-   * 
+   *
    * @param mappedName
    *          the property name to which this embedded field is mapped.
    */
@@ -145,7 +145,7 @@ public class EmbeddedMetadata extends MetadataBase {
   /**
    * Returns whether or not this embedded object should be indexed. Only used when the storage
    * strategy is {@link StorageStrategy#IMPLODED}.
-   * 
+   *
    * @return the indexed <code>true</code>, if this embedded object should be indexed;
    *         <code>false</code>, otherwise.
    */
@@ -155,7 +155,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Sets whether or not to index this embedded field.
-   * 
+   *
    * @param indexed
    *          whether or not to index this embedded field.
    */
@@ -165,7 +165,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Tells whether or not the field represented by this metadata is optional.
-   * 
+   *
    * @return <code>true</code>, if the field represented by this metadata is optional;
    *         <code>false</code>, otherwise.
    */
@@ -175,7 +175,7 @@ public class EmbeddedMetadata extends MetadataBase {
 
   /**
    * Sets whether or not the field represented by this metadata is optional.
-   * 
+   *
    * @param optional
    *          whether or not the field represented by this metadata is optional.
    */

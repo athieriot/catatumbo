@@ -33,6 +33,11 @@ public abstract class FieldMetadata {
   protected final Field field;
 
   /**
+   * Underlying field type
+   */
+  protected final Class<?> type;
+
+  /**
    * Read method (or getter method) for this field
    */
   protected final MethodHandle readMethod;
@@ -44,20 +49,23 @@ public abstract class FieldMetadata {
 
   /**
    * Creates a new instance of <code>FieldMetadata</code>.
-   * 
+   *
    * @param field
    *          the field
+   * @param type
+   *          the field Type
    *
    */
-  public FieldMetadata(Field field) {
+  public FieldMetadata(Field field, Class<?> type) {
     this.field = field;
-    this.readMethod = IntrospectionUtils.findReadMethodHandle(this.field);
-    this.writeMethod = IntrospectionUtils.findWriteMethodHandle(this.field);
+    this.type = type;
+    this.readMethod = IntrospectionUtils.findReadMethodHandle(this.field, this.type);
+    this.writeMethod = IntrospectionUtils.findWriteMethodHandle(this.field, this.type);
   }
 
   /**
    * Returns the field.
-   * 
+   *
    * @return the field.
    */
   public Field getField() {
@@ -93,12 +101,12 @@ public abstract class FieldMetadata {
 
   /**
    * Returns the declared type of the field to which this metadata belongs.
-   * 
+   *
    * @return the declared type of the field to which this metadata belongs.
    */
   @SuppressWarnings("rawtypes")
   public Class getDeclaredType() {
-    return field.getType();
+    return type;
   }
 
 }

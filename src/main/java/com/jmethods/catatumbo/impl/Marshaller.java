@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -52,7 +53,7 @@ public class Marshaller {
    * The intent of marshalling an object. The marshalling may be different depending on the intended
    * purpose. For example, if marshalling an object for UPDATE operation, the marshaller does not
    * automatically generate a key.
-   * 
+   *
    * @author Sai Pullabhotla
    *
    */
@@ -94,7 +95,7 @@ public class Marshaller {
 
     /**
      * Creates a new instance of <code>Intent</code>.
-     * 
+     *
      * @param keyRequired
      *          whether or not a complete key is required.
      * @param validOnProjectedEntities
@@ -107,7 +108,7 @@ public class Marshaller {
 
     /**
      * Tells whether or not a complete key is required for this Intent.
-     * 
+     *
      * @return <code>true</code>, if a complete key is required; <code>false</code>, otherwise.
      */
     public boolean isKeyRequired() {
@@ -116,7 +117,7 @@ public class Marshaller {
 
     /**
      * Tells whether or not this intent is valid on projected entities.
-     * 
+     *
      * @return <code>true</code>, if this intent is valid/supported on projected entities;
      *         <code>false</code>, otherwise.
      */
@@ -166,17 +167,18 @@ public class Marshaller {
    * @param intent
    *          the intent of marshalling
    */
-  private Marshaller(DefaultEntityManager entityManager, Object entity, Intent intent) {
+  private Marshaller(DefaultEntityManager entityManager, Object entity, Intent intent,
+                     Type entityType) {
     this.entityManager = entityManager;
     this.entity = entity;
     this.intent = intent;
-    entityMetadata = EntityIntrospector.introspect(entity.getClass());
+    entityMetadata = EntityIntrospector.introspect(entity, entityType);
     validateIntent();
   }
 
   /**
    * Validates if the Intent is legal for the entity being marshalled.
-   * 
+   *
    * @throws EntityManagerException
    *           if the Intent is not valid for the entity being marshalled
    */
@@ -190,7 +192,30 @@ public class Marshaller {
 
   /**
    * Marshals the given entity (POJO) into the format needed for the low level Cloud Datastore API.
-   * 
+   *
+   * @param entityManager
+   *          the entity manager
+   * @param entity
+   *          the entity to marshal
+   * @param intent
+   *          the intent or purpose of marshalling. Marshalling process varies slightly depending on
+   *          the purpose. For example, if the purpose if INSERT or UPSERT, the marshaller would
+   *          auto generate any keys. Where as if the purpose is UPDATE, then then marshaller will
+   *          NOT generate any keys.
+   * @param entityType
+   *          the entity type
+   * @return the marshaled object
+   */
+  @SuppressWarnings("rawtypes")
+  public static BaseEntity marshal(DefaultEntityManager entityManager, Object entity, Intent intent,
+                                   Type entityType) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, intent, entityType);
+    return marshaller.marshal();
+  }
+
+  /**
+   * Marshals the given entity (POJO) into the format needed for the low level Cloud Datastore API.
+   *
    * @param entityManager
    *          the entity manager
    * @param entity
@@ -204,15 +229,15 @@ public class Marshaller {
    */
   @SuppressWarnings("rawtypes")
   public static BaseEntity marshal(DefaultEntityManager entityManager, Object entity,
-      Intent intent) {
-    Marshaller marshaller = new Marshaller(entityManager, entity, intent);
+                                   Intent intent) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, intent, null);
     return marshaller.marshal();
   }
 
   /**
    * Marshals the given entity and and returns the equivalent Entity needed for the underlying Cloud
    * Datastore API.
-   * 
+   *
    * @return A native entity that is equivalent to the POJO being marshalled. The returned value
    *         could either be a FullEntity or Entity.
    */
@@ -240,10 +265,12 @@ public class Marshaller {
    *          the entity manager.
    * @param entity
    *          the entity from which key is to be extracted
+   * @param entityType
+   *          the entity type
    * @return extracted key.
    */
-  public static Key marshalKey(DefaultEntityManager entityManager, Object entity) {
-    Marshaller marshaller = new Marshaller(entityManager, entity, Intent.DELETE);
+  public static Key marshalKey(DefaultEntityManager entityManager, Object entity, Type entityType) {
+    Marshaller marshaller = new Marshaller(entityManager, entity, Intent.DELETE, entityType);
     marshaller.marshalKey();
     return (Key) marshaller.key;
   }
@@ -309,7 +336,7 @@ public class Marshaller {
 
   /**
    * Checks to see if the given value is a valid identifier for the given ID type.
-   * 
+   *
    * @param idValue
    *          the ID value
    * @param identifierType
@@ -340,7 +367,7 @@ public class Marshaller {
 
   /**
    * Creates a complete key using the given parameters.
-   * 
+   *
    * @param parent
    *          the parent key, may be <code>null</code>.
    * @param id
@@ -357,7 +384,7 @@ public class Marshaller {
 
   /**
    * Creates a complete key using the given parameters.
-   * 
+   *
    * @param parent
    *          the parent key, may be <code>null</code>.
    * @param id
@@ -375,7 +402,7 @@ public class Marshaller {
   /**
    * Creates a CompleteKey using the given parameters. The actual ID is generated using
    * <code>UUID.randomUUID().toString()</code>.
-   * 
+   *
    * @param parent
    *          the parent key, may be <code>null</code>.
    */
@@ -391,7 +418,7 @@ public class Marshaller {
 
   /**
    * Creates an IncompleteKey.
-   * 
+   *
    * @param parent
    *          the parent key, may be <code>null</code>.
    */
@@ -417,7 +444,7 @@ public class Marshaller {
 
   /**
    * Marshals the field with the given property metadata.
-   * 
+   *
    * @param propertyMetadata
    *          the metadata of the field to be marshaled.
    * @param target
@@ -429,7 +456,7 @@ public class Marshaller {
 
   /**
    * Marshals the field with the given property metadata.
-   * 
+   *
    * @param propertyMetadata
    *          the metadata of the field to be marshaled.
    * @param target
@@ -488,7 +515,7 @@ public class Marshaller {
 
   /**
    * Marshals an embedded field represented by the given metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the embedded field
    * @param target
@@ -510,7 +537,7 @@ public class Marshaller {
 
   /**
    * Marshals the embedded field represented by the given metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the embedded field.
    * @param target
@@ -596,7 +623,7 @@ public class Marshaller {
 
   /**
    * Applies the given time, <code>millis</code>, to the property represented by the given metadata.
-   * 
+   *
    * @param propertyMetadata
    *          the property metadata of the field
    * @param millis
@@ -638,7 +665,7 @@ public class Marshaller {
 
   /**
    * Initializes the Embedded object represented by the given metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the embedded field
    * @param target

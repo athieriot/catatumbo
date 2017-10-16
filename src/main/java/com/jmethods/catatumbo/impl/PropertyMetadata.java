@@ -78,9 +78,11 @@ public class PropertyMetadata extends FieldMetadata {
    *
    * @param field
    *          the field
+   * @param type
+   *          the field type
    */
-  public PropertyMetadata(Field field) {
-    super(field);
+  public PropertyMetadata(Field field, Class<?> type) {
+    super(field, type);
     String mappedName = field.getName();
     boolean indexed = true;
     boolean optional = false;
@@ -102,9 +104,11 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Creates a new instance of <code>PropertyMetadata</code>.
-   * 
+   *
    * @param field
    *          the field
+   * @param type
+   *          the field type
    * @param mappedName
    *          name of the property in the Datastore
    * @param indexed
@@ -112,8 +116,9 @@ public class PropertyMetadata extends FieldMetadata {
    * @param optional
    *          whether or not the property is optional
    */
-  public PropertyMetadata(Field field, String mappedName, boolean indexed, boolean optional) {
-    super(field);
+  public PropertyMetadata(Field field, Class<?> type, String mappedName, boolean indexed,
+                          boolean optional) {
+    super(field, type);
     this.mappedName = mappedName;
     this.indexed = indexed;
     setOptional(optional);
@@ -161,7 +166,7 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Returns the secondary indexer associated with this property, if any.
-   * 
+   *
    * @return the secondaryIndexer the secondary indexer associated with this property. May be
    *         <code>null</code>.
    */
@@ -171,7 +176,7 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Returns the secondary index name, if any.
-   * 
+   *
    * @return the secondary index name. May be <code>null</code>.
    */
   public String getSecondaryIndexName() {
@@ -180,7 +185,7 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Tells whether or not the field represented by this metadata is optional.
-   * 
+   *
    * @return <code>true</code>, if the field represented by this metadata is optional;
    *         <code>false</code>, otherwise.
    */
@@ -190,12 +195,12 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Sets whether or not the field represented by this metadata is optional.
-   * 
+   *
    * @param optional
    *          whether or not the field represented by this metadata is optional.
    */
   public void setOptional(boolean optional) {
-    if (field.getType().isPrimitive() || field.isAnnotationPresent(Version.class)
+    if (getDeclaredType().isPrimitive() || field.isAnnotationPresent(Version.class)
         || field.isAnnotationPresent(CreatedTimestamp.class)
         || field.isAnnotationPresent(UpdatedTimestamp.class)) {
       this.optional = false;
@@ -230,7 +235,7 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Returns the {@link Mapper} associated with the field to which this metadata belongs.
-   * 
+   *
    * @return he {@link Mapper} associated with the field to which this metadata belongs.
    */
   public Mapper getMapper() {
@@ -239,12 +244,12 @@ public class PropertyMetadata extends FieldMetadata {
 
   /**
    * Initializes the {@link Mapper} for this field.
-   * 
+   *
    * @return the {@link Mapper} for the field represented by this metadata
    */
   private Mapper initializeMapper() {
     try {
-      return MapperFactory.getInstance().getMapper(field);
+      return MapperFactory.getInstance().getMapper(field, getDeclaredType());
     } catch (NoSuitableMapperException exp) {
       String message = String.format(
           "No suitable mapper found or error occurred creating a mapper for field %s in class %s",

@@ -17,6 +17,7 @@
 package com.jmethods.catatumbo.impl;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Type;
 import java.util.Collection;
 
 import com.google.cloud.datastore.BaseEntity;
@@ -54,48 +55,48 @@ public class Unmarshaller {
 
   /**
    * Creates a new instance of <code>Unmarshaller</code>.
-   * 
+   *
    * @param nativeEntity
    *          the native entity to unmarshal
-   * @param entityClass
+   * @param entityType
    *          the expected model type
    */
-  private Unmarshaller(BaseEntity<?> nativeEntity, Class<?> entityClass) {
+  private Unmarshaller(BaseEntity<?> nativeEntity, Type entityType) {
     this.nativeEntity = nativeEntity;
-    entityMetadata = EntityIntrospector.introspect(entityClass);
+    entityMetadata = EntityIntrospector.introspect(entityType);
 
   }
 
   /**
    * Unmarshals the given native Entity into an object of given type, entityClass.
-   * 
+   *
    * @param <T>
    *          target object type
    * @param nativeEntity
    *          the native Entity
-   * @param entityClass
+   * @param entityType
    *          the target type
    * @return Object that is equivalent to the given native entity. If the given
    *         <code>datastoreEntity</code> is <code>null</code>, returns <code>null</code>.
    */
-  public static <T> T unmarshal(Entity nativeEntity, Class<T> entityClass) {
-    return unmarshalBaseEntity(nativeEntity, entityClass);
+  public static <T> T unmarshal(Entity nativeEntity, Type entityType) {
+    return unmarshalBaseEntity(nativeEntity, entityType);
   }
 
   /**
    * Unmarshals the given native ProjectionEntity into an object of given type, entityClass.
-   * 
+   *
    * @param <T>
    *          target object type
    * @param nativeEntity
    *          the native Entity
-   * @param entityClass
+   * @param entityType
    *          the target type
    * @return Object that is equivalent to the given native entity. If the given
    *         <code>datastoreEntity</code> is <code>null</code>, returns <code>null</code>.
    */
-  public static <T> T unmarshal(ProjectionEntity nativeEntity, Class<T> entityClass) {
-    return unmarshalBaseEntity(nativeEntity, entityClass);
+  public static <T> T unmarshal(ProjectionEntity nativeEntity, Type entityType) {
+    return unmarshalBaseEntity(nativeEntity, entityType);
   }
 
   /**
@@ -130,18 +131,18 @@ public class Unmarshaller {
 
   /**
    * Unmarshals the given BaseEntity and returns the equivalent model object.
-   * 
+   *
    * @param nativeEntity
    *          the native entity to unmarshal
-   * @param entityClass
+   * @param entityType
    *          the target type of the model class
    * @return the model object
    */
-  private static <T> T unmarshalBaseEntity(BaseEntity<?> nativeEntity, Class<T> entityClass) {
+  private static <T> T unmarshalBaseEntity(BaseEntity<?> nativeEntity, Type entityType) {
     if (nativeEntity == null) {
       return null;
     }
-    Unmarshaller unmarshaller = new Unmarshaller(nativeEntity, entityClass);
+    Unmarshaller unmarshaller = new Unmarshaller(nativeEntity, entityType);
     return unmarshaller.unmarshal();
   }
 
@@ -154,7 +155,7 @@ public class Unmarshaller {
 
   /**
    * Unamrshals the identifier.
-   * 
+   *
    * @throws Throwable
    *           propagated
    */
@@ -174,10 +175,10 @@ public class Unmarshaller {
 
   /**
    * Unamrshals the entity's key and parent key.
-   * 
+   *
    * @throws Throwable
    *           propagated
-   * 
+   *
    */
   private void unmarshalKeyAndParentKey() throws Throwable {
     KeyMetadata keyMetadata = entityMetadata.getKeyMetadata();
@@ -199,7 +200,7 @@ public class Unmarshaller {
 
   /**
    * Unmarshal all the properties.
-   * 
+   *
    * @throws Throwable
    *           propagated
    */
@@ -213,7 +214,7 @@ public class Unmarshaller {
 
   /**
    * Unmarshals the embedded fields of this entity.
-   * 
+   *
    * @throws Throwable
    *           propagated
    */
@@ -229,7 +230,7 @@ public class Unmarshaller {
 
   /**
    * Unmarshals the embedded field represented by the given embedded metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the embedded metadata
    * @param target
@@ -255,7 +256,7 @@ public class Unmarshaller {
 
   /**
    * Unmarshals the embedded field represented by the given metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the field to unmarshal
    * @param target
@@ -298,7 +299,7 @@ public class Unmarshaller {
   /**
    * Unmarshals the property represented by the given property metadata and updates the target
    * object with the property value.
-   * 
+   *
    * @param propertyMetadata
    *          the property metadata
    * @param target
@@ -314,7 +315,7 @@ public class Unmarshaller {
   /**
    * Unmarshals the property with the given metadata and sets the unmarshalled value on the given
    * <code>target</code> object.
-   * 
+   *
    * @param propertyMetadata
    *          the metadata of the property
    * @param target
@@ -341,7 +342,7 @@ public class Unmarshaller {
 
   /**
    * Initializes the Embedded object represented by the given metadata.
-   * 
+   *
    * @param embeddedMetadata
    *          the metadata of the embedded field
    * @param target

@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo.impl;
 
+import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,7 +35,7 @@ import com.jmethods.catatumbo.impl.IdentifierMetadata.DataType;
 
 /**
  * Utility methods.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -62,20 +63,20 @@ class DatastoreUtils {
   /**
    * Converts the given list of native entities to a list of model objects of given type,
    * <code>entityClass</code>.
-   * 
-   * @param entityClass
-   *          the entity class
+   *
+   * @param entityType
+   *          the entity type
    * @param nativeEntities
    *          native entities to convert
    * @return the list of model objects
    */
-  static <E> List<E> toEntities(Class<E> entityClass, List<Entity> nativeEntities) {
+  public static <E> List<E> toEntities(Type entityType, List<Entity> nativeEntities) {
     if (nativeEntities == null || nativeEntities.isEmpty()) {
       return new ArrayList<>();
     }
     List<E> entities = new ArrayList<>(nativeEntities.size());
     for (Entity nativeEntity : nativeEntities) {
-      E entity = Unmarshaller.unmarshal(nativeEntity, entityClass);
+      E entity = Unmarshaller.unmarshal(nativeEntity, entityType);
       entities.add(entity);
     }
     return entities;
@@ -84,23 +85,23 @@ class DatastoreUtils {
   /**
    * Converts the given array of native entities to a list of model objects of given type,
    * <code>entityClass</code>.
-   * 
-   * @param entityClass
-   *          the entity class
+   *
+   * @param entityType
+   *          the entity type
    * @param nativeEntities
    *          native entities to convert
    * @return the list of model objects
    */
-  static <E> List<E> toEntities(Class<E> entityClass, Entity[] nativeEntities) {
+  public static <E> List<E> toEntities(Type entityType, Entity[] nativeEntities) {
     if (nativeEntities == null || nativeEntities.length == 0) {
       return new ArrayList<>();
     }
-    return toEntities(entityClass, Arrays.asList(nativeEntities));
+    return toEntities(entityType, Arrays.asList(nativeEntities));
   }
 
   /**
    * Converts the given list of model objects to an array of FullEntity objects.
-   * 
+   *
    * @param entities
    *          the model objects to convert.
    * @param entityManager
@@ -110,18 +111,18 @@ class DatastoreUtils {
    * @return the equivalent FullEntity array
    */
   static FullEntity<?>[] toNativeFullEntities(List<?> entities, DefaultEntityManager entityManager,
-      Marshaller.Intent intent) {
+      Marshaller.Intent intent, Type entityType) {
     FullEntity<?>[] nativeEntities = new FullEntity[entities.size()];
     for (int i = 0; i < entities.size(); i++) {
       nativeEntities[i] = (FullEntity<?>) Marshaller.marshal(entityManager, entities.get(i),
-          intent);
+              intent, entityType);
     }
     return nativeEntities;
   }
 
   /**
    * Converts the given list of model objects to an array of native Entity objects.
-   * 
+   *
    * @param entities
    *          the model objects to convert.
    * @param entityManager
@@ -131,17 +132,18 @@ class DatastoreUtils {
    * @return the equivalent Entity array
    */
   static Entity[] toNativeEntities(List<?> entities, DefaultEntityManager entityManager,
-      Marshaller.Intent intent) {
+                                   Marshaller.Intent intent, Type entityType) {
     Entity[] nativeEntities = new Entity[entities.size()];
     for (int i = 0; i < entities.size(); i++) {
-      nativeEntities[i] = (Entity) Marshaller.marshal(entityManager, entities.get(i), intent);
+      nativeEntities[i] = (Entity) Marshaller.marshal(entityManager, entities.get(i),
+              intent, entityType);
     }
     return nativeEntities;
   }
 
   /**
    * Increments the version property of the given entity by one.
-   * 
+   *
    * @param nativeEntity
    *          the target entity
    * @param versionMetadata
@@ -156,7 +158,7 @@ class DatastoreUtils {
 
   /**
    * Rolls back the given transaction, if it is still active.
-   * 
+   *
    * @param transaction
    *          the transaction to roll back.
    */
@@ -172,7 +174,7 @@ class DatastoreUtils {
 
   /**
    * Converts/wraps the given native keys into a list of {@link DatastoreKey} objects.
-   * 
+   *
    * @param nativeKeys
    *          the native keys
    * @return a list of {@link DatastoreKey} objects.
@@ -191,7 +193,7 @@ class DatastoreUtils {
   /**
    * Converts/Unwraps the given list of {@link DatastoreKey} objects into an array of native
    * {@link Key}s.
-   * 
+   *
    * @param keys
    *          the list of {@link DatastoreKey} objects
    * @return the native keys
@@ -207,14 +209,14 @@ class DatastoreUtils {
   /**
    * Validates if the given entity is valid for deferred ID allocation. Deferred ID allocation is
    * valid for entities using a numeric ID.
-   * 
+   *
    * @param entity
    *          the entity to validate
    * @throws EntityManagerException
    *           if the given entity does not use a numeric ID
    */
-  static void validateDeferredIdAllocation(Object entity) {
-    IdentifierMetadata identifierMetadata = EntityIntrospector.getIdentifierMetadata(entity);
+  public static void validateDeferredIdAllocation(Object entity, Type type) {
+    IdentifierMetadata identifierMetadata = EntityIntrospector.getIdentifierMetadata(entity, type);
     if (identifierMetadata.getDataType() == DataType.STRING) {
       throw new EntityManagerException(
           "Deferred ID allocation is not applicable for entities with String identifiers. ");
@@ -225,7 +227,7 @@ class DatastoreUtils {
   /**
    * Wraps the given DatastoreException into an {@link EntityManagerException} or a subclass of
    * {@link EntityManagerException}.
-   * 
+   *
    * @param exp
    *          the DatastoreException
    * @return An {@link EntityManagerException} or a subclass of {@link EntityManagerException}.

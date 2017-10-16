@@ -16,6 +16,7 @@
 
 package com.jmethods.catatumbo;
 
+import java.lang.reflect.Type;
 import java.util.List;
 
 /**
@@ -25,7 +26,7 @@ import java.util.List;
  * (read/write) within a transaction. Transactions are committed with the call to
  * {@link DatastoreTransaction#commit()} method. Transactions can be rolled back with a call to
  * {@link DatastoreTransaction#rollback()}.
- * 
+ *
  * @author Sai Pullabhotla
  *
  */
@@ -34,7 +35,7 @@ public interface DatastoreTransaction extends DatastoreAccess {
   /**
    * Inserts the given entity. ID allocation is deferred to the submit time. Generated key, if any,
    * can be retrieved by calling {@link DatastoreTransaction.Response#getGeneratedKeys()}.
-   * 
+   *
    * @param entity
    *          the entity to insert.
    * @throws EntityManagerException
@@ -44,9 +45,23 @@ public interface DatastoreTransaction extends DatastoreAccess {
   <E> void insertWithDeferredIdAllocation(E entity);
 
   /**
+   * Inserts the given entity. ID allocation is deferred to the submit time. Generated key, if any,
+   * can be retrieved by calling {@link DatastoreTransaction.Response#getGeneratedKeys()}.
+   *
+   * @param entity
+   *          the entity to insert.
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String Identifier or any other error occurs while accessing the
+   *           underlying Datastore.
+   */
+  <E> void insertWithDeferredIdAllocation(E entity, Type entityType);
+
+  /**
    * Inserts the given entities. ID allocation is deferred to the submit time. Generated keys, if
    * any, can be retrieved by calling {@link DatastoreTransaction.Response#getGeneratedKeys()}.
-   * 
+   *
    * @param entities
    *          the entities to insert
    * @throws EntityManagerException
@@ -56,11 +71,25 @@ public interface DatastoreTransaction extends DatastoreAccess {
   <E> void insertWithDeferredIdAllocation(List<E> entities);
 
   /**
+   * Inserts the given entities. ID allocation is deferred to the submit time. Generated keys, if
+   * any, can be retrieved by calling {@link DatastoreTransaction.Response#getGeneratedKeys()}.
+   *
+   * @param entities
+   *          the entities to insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String Identifier or any other error occurs while accessing the
+   *           underlying Datastore.
+   */
+  <E> void insertWithDeferredIdAllocation(List<E> entities, Type entityType);
+
+  /**
    * Updates or inserts the given entity. ID allocation is deferred to the submit time. Generated
    * key, if any, can be retrieved by calling
    * {@link DatastoreTransaction.Response#getGeneratedKeys()}.
-   * 
-   * 
+   *
+   *
    * @param entity
    *          the entity to update or insert.
    * @throws EntityManagerException
@@ -70,11 +99,27 @@ public interface DatastoreTransaction extends DatastoreAccess {
   <E> void upsertWithDeferredIdAllocation(E entity);
 
   /**
+   * Updates or inserts the given entity. ID allocation is deferred to the submit time. Generated
+   * key, if any, can be retrieved by calling
+   * {@link DatastoreTransaction.Response#getGeneratedKeys()}.
+   *
+   *
+   * @param entity
+   *          the entity to update or insert.
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String Identifier or any other error occurs while accessing the
+   *           underlying Datastore.
+   */
+  <E> void upsertWithDeferredIdAllocation(E entity, Type entityType);
+
+  /**
    * Updates or Inserts the given entities. ID allocation is deferred to the submit time. Generated
    * keys, if any, can be retrieved by calling
    * {@link DatastoreTransaction.Response#getGeneratedKeys()}.
-   * 
-   * 
+   *
+   *
    * @param entities
    *          the entities to update or insert
    * @throws EntityManagerException
@@ -84,8 +129,24 @@ public interface DatastoreTransaction extends DatastoreAccess {
   <E> void upsertWithDeferredIdAllocation(List<E> entities);
 
   /**
+   * Updates or Inserts the given entities. ID allocation is deferred to the submit time. Generated
+   * keys, if any, can be retrieved by calling
+   * {@link DatastoreTransaction.Response#getGeneratedKeys()}.
+   *
+   *
+   * @param entities
+   *          the entities to update or insert
+   * @param entityType
+   *          the entity type
+   * @throws EntityManagerException
+   *           if the entity has a String Identifier or any other error occurs while accessing the
+   *           underlying Datastore.
+   */
+  <E> void upsertWithDeferredIdAllocation(List<E> entities, Type entityType);
+
+  /**
    * Tells if this DatastoreTransaction is still active.
-   * 
+   *
    * @return <code>true</code>, if this DatastoreTransaction is still active; <code>false</code>,
    *         otherwise.
    */
@@ -93,9 +154,9 @@ public interface DatastoreTransaction extends DatastoreAccess {
 
   /**
    * Commits changes made within this transaction.
-   * 
+   *
    * @return Response. The response contains any generated.
-   * 
+   *
    * @throws EntityManagerException
    *           if the commit fails.
    */
@@ -103,7 +164,7 @@ public interface DatastoreTransaction extends DatastoreAccess {
 
   /**
    * Rolls back the changes made in this transaction.
-   * 
+   *
    * @throws EntityManagerException
    *           if this transaction was already committed.
    */
@@ -112,14 +173,14 @@ public interface DatastoreTransaction extends DatastoreAccess {
   /**
    * Transaction's commit Response. Used for returning generated keys for entities whose id
    * allocation was deferred until submit/commit time.
-   * 
+   *
    * @author Sai Pullabhotla
    *
    */
   interface Response {
     /**
      * Returns a list of generated keys.
-     * 
+     *
      * @return a list of generated keys.
      */
     List<DatastoreKey> getGeneratedKeys();
