@@ -2,7 +2,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.github.athieriot</groupId>
   <artifactId>catatumbo</artifactId>
-  <version>23.1.0</version>
+  <version>23.1.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Catatumbo</name>
   <description>
@@ -35,7 +35,7 @@
     <connection>scm:git:https://github.com/athieriot/catatumbo.git</connection>
     <developerConnection>scm:git:https://github.com/athieriot/catatumbo.git</developerConnection>
     <url>scm:git:https://github.com/athieriot/catatumbo.git</url>
-    <tag>23.1.0</tag>
+    <tag>HEAD</tag>
   </scm>
   <distributionManagement>
     <snapshotRepository>
