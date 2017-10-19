@@ -1,9 +1,9 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <groupId>com.jmethods</groupId>
+  <groupId>com.github.athieriot</groupId>
   <artifactId>catatumbo</artifactId>
-  <version>2.3.1-SNAPSHOT</version>
+  <version>23.1-SNAPSHOT</version>
   <packaging>jar</packaging>
   <name>Catatumbo</name>
   <description>
@@ -27,11 +27,15 @@
       <name>Sai Pullabhotla</name>
       <email>Sai.Pullabhotla@jMethods.com</email>
     </developer>
+    <developer>
+      <name>Aurelien Thieriot</name>
+      <email>a.thieriot@gmail.com</email>
+    </developer>
   </developers>
   <scm>
-    <connection>scm:git:https://github.com/sai-pullabhotla/catatumbo.git</connection>
-    <developerConnection>scm:git:https://github.com/sai-pullabhotla/catatumbo.git</developerConnection>
-    <url>scm:git:https://github.com/sai-pullabhotla/catatumbo.git</url>
+    <connection>scm:git:https://github.com/athieriot/catatumbo.git</connection>
+    <developerConnection>scm:git:https://github.com/athieriot/catatumbo.git</developerConnection>
+    <url>scm:git:https://github.com/athieriot/catatumbo.git</url>
     <tag>HEAD</tag>
   </scm>
   <distributionManagement>

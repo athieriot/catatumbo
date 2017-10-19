@@ -61,8 +61,8 @@ public class TestUtils {
     }
     ConnectionParameters parameters = new ConnectionParameters();
     parameters.setServiceURL(System.getenv(ENV_SERVICE_URL));
-    parameters.setProjectId(System.getenv(ENV_PROJECT_ID));
-    parameters.setNamespace(System.getenv(ENV_NAMESPACE));
+    parameters.setProjectId("finkit-testing");
+    parameters.setNamespace("catatumbo");
     String jsonCredentialsPath = System.getenv(ENV_CREDENTIALS);
     if (!Utility.isNullOrEmpty(jsonCredentialsPath)) {
       parameters.setJsonCredentialsFile(jsonCredentialsPath);
